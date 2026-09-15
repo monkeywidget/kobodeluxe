@@ -3,6 +3,7 @@
 	window.cpp - Generic Rendering Window
 ---------------------------------------------------------------------------
  * Copyright (C) 2001-2003, 2006, 2007, 2020 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -186,13 +187,18 @@ void window_t::invalidate(SDL_Rect *r)
 			rr.w = phys_rect.w;
 			rr.h = phys_rect.h;
 			phys_refresh(&rr);
-			glSDL_Invalidate(surface, &rr);
 		}
 		else
 		{
 			phys_refresh(r);
-			glSDL_Invalidate(surface, r);
 		}
+		/*
+		 * The glSDL_Invalidate() calls that sat here marked a region
+		 * of an OpenGL texture as needing re-upload. glSDL's own header
+		 * described this as "just a performance hack" that was safe to
+		 * ignore, and there is nothing to invalidate now: the screen
+		 * surface is plain memory, uploaded whole on each present.
+		 */
 		return;
 	}
 

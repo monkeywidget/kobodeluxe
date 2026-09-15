@@ -4,6 +4,7 @@
 ------------------------------------------------------------
  * Copyright (C) 2001-2003, 2007, 2020 David Olofson
  * Copyright (C) 2005 Erik Auerswald
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -37,6 +38,38 @@ class prefs_t : public config_parser_t
 	//Input options
 	int	use_joystick;
 	int	joystick_no;		//which joystick to use
+
+	/*
+	 * Gamepad mapping.
+	 *
+	 * These are preferences rather than compile time constants because the
+	 * indices are a property of the device and the platform, not of the
+	 * game: the same pad reports a different button order in its XInput and
+	 * DirectInput modes, and Android derives indices from its own keycode
+	 * table. Being able to correct a mapping with a command line argument,
+	 * rather than a rebuild, is what makes bringing this up on a new device
+	 * practical -- every key here doubles as a "-<key> <value>" switch.
+	 */
+	int	js_lr;			//left/right axis
+	int	js_ud;			//up/down axis
+	int	js_hat;			//hat (D-pad) index, or -1 if none
+
+	/*
+	 * D-pad as individual buttons, for platforms that report it that way.
+	 * Android does: SDL folds any hat into these four buttons and then
+	 * reports zero hats, so js_hat alone would leave the D-pad dead there.
+	 * Set to -1 where a real hat is available.
+	 */
+	int	js_dpad_up;
+	int	js_dpad_down;
+	int	js_dpad_left;
+	int	js_dpad_right;
+	int	js_deadzone;		//percent of full deflection
+	int	js_fire;		//primary fire
+	int	js_fire2;		//secondary fire
+	int	js_exit;		//back/cancel; the way out of any screen
+	int	js_menu;		//opens the pause menu
+	int	js_pause;		//opens the pause menu
 	int	use_mouse;
 	int	mousemode;
 	int	broken_numdia;

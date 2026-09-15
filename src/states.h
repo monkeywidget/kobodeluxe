@@ -5,6 +5,7 @@
  * Copyright (C) 2001-2003 David Olofson
  * Copyright (C) 2002 Jeremy Sheeley
  * Copyright (C) 2007 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -129,6 +130,8 @@ class st_pause_game_t : public kobo_basestate_t
 	void press(int button);
 	void frame();
 	void post_render();
+  private:
+	Uint32	entered;	// When the screen opened; see press()
 };
 
 

@@ -3,6 +3,7 @@
 	a_tools.h - Various useful audio macros and inlines
 ---------------------------------------------------------------------------
  * Copyright (C) 2001 - 2003, David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +23,7 @@
 #ifndef	_A_TOOLS_H_
 #define	_A_TOOLS_H_
 
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 #include <string.h>
 #include "kobolog.h"
 #include "a_types.h"

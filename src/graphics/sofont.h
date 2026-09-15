@@ -42,7 +42,7 @@
 #ifndef __SOFONT_H
 #define __SOFONT_H
 
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 
 class SoFont
 {

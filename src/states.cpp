@@ -5,6 +5,7 @@
  * Copyright (C) 2001-2003 David Olofson
  * Copyright (C) 2002 Jeremy Sheeley
  * Copyright (C) 2005-2007 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,7 +22,7 @@
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 #include <math.h>
 #ifndef M_PI
 # define M_PI 3.14159265358979323846	/* pi */
@@ -422,8 +423,19 @@ st_pause_game_t::st_pause_game_t()
 }
 
 
+/*
+ * Presses are ignored for this long after the pause screen opens.
+ *
+ * Guards against a bouncing switch on the pause button itself delivering a
+ * second press that dismisses the screen as fast as it appeared. Short enough
+ * that a deliberate double-tap to pause and immediately resume still works.
+ */
+#define	KOBO_PAUSE_DEBOUNCE	250
+
+
 void st_pause_game_t::enter()
 {
+	entered = SDL_GetTicks();
 	sound.ui_pause();
 }
 
@@ -434,12 +446,45 @@ void st_pause_game_t::press(int button)
 	{
 	  case BTN_EXIT:
 		gsm.change(&st_main_menu);
-		break;
+		return;
+
+	  /*
+	   * A direction must not dismiss the pause screen.
+	   *
+	   * Every other button resumes the game, which is fine for a keyboard,
+	   * but an analog stick springs back to centre on its own and emits
+	   * direction changes on the way. Pausing while the stick was still
+	   * returning therefore dismissed the pause screen instantly:
+	   *
+	   *   [2244959] Pushed state 'pause_game'
+	   *   [2244959] Joystick button 9 down
+	   *   [2244993] Popped state 'pause_game'
+	   *   [2244993] Joystick stick: LEFT -> UL
+	   *
+	   * 34 ms, with no second button press involved. Directions mean
+	   * "move" everywhere else in the game, never "confirm", so ignoring
+	   * them here costs nothing.
+	   */
+	  case BTN_UP:
+	  case BTN_DOWN:
+	  case BTN_LEFT:
+	  case BTN_RIGHT:
+	  case BTN_UL:
+	  case BTN_UR:
+	  case BTN_DL:
+	  case BTN_DR:
+		return;
+
 	  default:
-		sound.ui_play();
-		pop();
 		break;
 	}
+
+	/* Unsigned arithmetic, so this stays correct across a tick wrap. */
+	if(SDL_GetTicks() - entered < KOBO_PAUSE_DEBOUNCE)
+		return;
+
+	sound.ui_play();
+	pop();
 }
 
 
@@ -878,12 +923,12 @@ void new_player_t::open()
 	currentIndex = 0;
 	editing = 1;
 	build_all();
-	SDL_EnableUNICODE(1);
+	// SDL 2 has no UNICODE translation mode to enable; characters for this
+	// field are derived from the keysym in kobo12_KeysymChar().
 }
 
 void new_player_t::close()
 {
-	SDL_EnableUNICODE(0);
 	clean();
 }
 

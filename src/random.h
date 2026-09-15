@@ -4,6 +4,7 @@
 ------------------------------------------------------------
  * Copyright (C) 1995, 1996, Akira Higuchi
  * Copyright (C) 2002, 2007 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,7 +25,7 @@
 #define _KOBO_RANDOM_H_
 
 #include <time.h>
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 
 class rand_num_t
 {

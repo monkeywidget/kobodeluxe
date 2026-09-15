@@ -3,6 +3,7 @@
 	logger.c - Simple logger with redirection
 ---------------------------------------------------------------------------
  * Copyright (C) 2003, David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +26,7 @@
 
 #include "config.h"
 #include "logger.h"
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 
 #define	LOG_BUFFER	1024
 

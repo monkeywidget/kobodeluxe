@@ -1,0 +1,17 @@
+# file	reason a platform port had to touch XKobo game logic
+#
+# Every line here is a file carrying Akira Higuchi's copyright that this port
+# could not leave byte-identical to upstream 943aa38. Keep this list short and
+# keep the reasons specific: the point of the check is that growth in this file
+# is visible and has to be argued for.
+#
+# Nothing below changes game behaviour. Where an SDL 1.2 name was merely
+# respelled in SDL 2 (SDLKey, SDLK_KP1, SDLK_PRINT, KMOD_META), the old name is
+# supplied by graphics/kobo_sdl12.h instead, precisely so that these files did
+# not have to be edited for it.
+#
+src/manage.h	include only: "glSDL.h" -> "kobo_sdl12.h" (glSDL deleted; immediate-mode GL cannot run on GLES)
+src/random.h	include only: "glSDL.h" -> "kobo_sdl12.h"
+src/gamectl.h	include only: "glSDL.h" -> "kobo_sdl12.h"
+src/gamectl.cpp	SDL_EnableKeyRepeat() removed in SDL 2; the two calls are dropped and the configured delay/interval kept for the input tranche to reinstate
+src/kobo.cpp	platform glue, no game logic: (1) SDL 2 event model -- SDL_VIDEOEXPOSE/SDL_ACTIVEEVENT folded into SDL_WINDOWEVENT, keysym.unicode -> kobo12_KeysymChar(), SDL_JoystickOpened() gone, plus a deliberate change to pause on real focus loss (see the comment there); (2) setvbuf() line buffering at the top of main(); (3) fmap->mkdir() call so the user directory is created; (4) joystick: enumeration logging, the macOS MFI hint, D-pad/hat decoding, radial deadzone, and the missing break that let every axis event fall through into the mouse handler

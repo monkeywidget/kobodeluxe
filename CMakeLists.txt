@@ -1,8 +1,14 @@
-cmake_minimum_required(VERSION 2.8)
+# 2.8 was a hard error from CMake 4.0 on ("Compatibility with CMake < 3.5 has
+# been removed"). 3.16 matches what SDL2_image itself requires, so it is the
+# lowest version this port can actually be built against anyway.
+cmake_minimum_required(VERSION 3.16)
 
 project(KOBODELUXE)
 
-set(KOBO_ORGANIZATION "OlofsonArcade")
+# Identifies THIS fork, not upstream. Feeds SDL_GetPrefPath(), so saves and
+# config live under ~/Library/Application Support/monkeywidget/KoboDeluxe and
+# cannot collide with an official build's.
+set(KOBO_ORGANIZATION "monkeywidget")
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 6)
@@ -70,11 +76,21 @@ install(DIRECTORY data/gfx
 	PATTERN "*.png"
 	PATTERN "*.gpl"
 	PATTERN "*.theme")
+# Sound data. The 2020 Autotools-to-CMake conversion took these patterns from
+# Kobo Redux, which stores sounds as *.a2s themes -- but Kobo Deluxe's own
+# sounds are 60 *.agw files, so the old patterns matched nothing and installed
+# a game with no audio data whatsoever. sound.cpp asks for "sfx.agw" and
+# "music.agw" by name (src/sound.cpp:80-105), and those are the roots that
+# pull in the rest.
 install(DIRECTORY data/sfx
 	DESTINATION "${KOBO_SHARE_DIR}"
 	FILES_MATCHING
-	PATTERN "*.a2s"
-	PATTERN "*.theme")
+	PATTERN "*.agw"
+	PATTERN "*.mid"
+	# kobosfx.h is not a build header here. The .agw files are EEL scripts
+	# that #include it at *runtime*, so without it sfx.agw fails to parse
+	# and the game starts with zero waveforms and silent effects.
+	PATTERN "*.h")
 
 # Documentation
 file(GLOB doc_files
@@ -86,8 +102,11 @@ install(FILES ${doc_files}
 
 # Desktop entry
 if(NOT WIN32)
-	set(KOBO_DE_FILE "net.olofson.${KOBO_PACKAGE_NAME}.desktop")
-	install(FILES "${KOBODELUXE_SOURCE_DIR}/icons/kobodeluxe.png"
+	set(KOBO_DE_FILE "com.github.monkeywidget.${KOBO_PACKAGE_NAME}.desktop")
+	# The file is icons/kobodl.png; the old path here was built from
+	# KOBO_PACKAGE_NAME ("kobodeluxe") and matched nothing, so every
+	# "make install" on a non-Windows host failed at this line.
+	install(FILES "${KOBODELUXE_SOURCE_DIR}/icons/kobodl.png"
 		DESTINATION "share/pixmaps"
 		RENAME "${KOBO_PACKAGE_NAME}.png")
 	install(FILES "${KOBODELUXE_SOURCE_DIR}/icons/${KOBO_DE_FILE}"
@@ -114,7 +133,7 @@ set(CPACK_PACKAGE_RELOCATABLE false)
 set(CPACK_STRIP_FILES true)
 set(CPACK_PACKAGE_NAME "${KOBO_PACKAGE_NAME}")
 set(CPACK_PACKAGE_VERSION "${VERSION_STRING}")
-set(CPACK_PACKAGE_CONTACT "David Olofson <david@olofson.net>")
+set(CPACK_PACKAGE_CONTACT "monkeywidget (https://github.com/monkeywidget)")
 set(CPACK_RESOURCE_FILE_LICENSE "${KOBODELUXE_SOURCE_DIR}/COPYING")
 set(CPACK_RESOURCE_FILE_README "${KOBODELUXE_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Arcade style 2D shooter")
@@ -132,7 +151,7 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
 set(CPACK_RPM_PACKAGE_GROUP "Games")
 set(CPACK_RPM_PACKAGE_DESCRIPTION "${CPACK_DEBIAN_PACKAGE_DESCRIPTION}")
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv2+")
-set(CPACK_RPM_PACKAGE_URL "http://kobodeluxe.com")
+set(CPACK_RPM_PACKAGE_URL "https://github.com/monkeywidget/kobodeluxe")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
 	/usr/share/applications /usr/share/pixmaps)
 

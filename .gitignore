@@ -10,6 +10,7 @@
 
 # Compiled Dynamic libraries
 *.so
+*.so.*
 *.dylib
 *.dll
 
@@ -25,4 +26,62 @@
 # Executables
 *.exe
 *.out
-*.app
+*.app/
+*.dSYM/
+
+# ---- Desktop build trees ---------------------------------------------------
+# The port builds out of tree, but keep these so an in-tree build cannot be
+# committed by accident.
+build/
+build-*/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# ---- Android build output --------------------------------------------------
+# ~48M of Gradle and NDK intermediates, all reproducible from a clean build.
+android/.gradle/
+android/build/
+android/app/build/
+android/.cxx/
+android/app/.cxx/
+android/app/libs/
+android/captures/
+*.apk
+*.aab
+
+# ---- Android local configuration and signing -------------------------------
+# local.properties carries this machine's SDK path AND the keystore password;
+# the keystore itself is a private key. Neither belongs in history.
+android/local.properties
+*.keystore
+*.jks
+
+# ---- Machine-specific build scaffolding ------------------------------------
+# These are symlinks to SDL sources outside the repository, and a copy of
+# data/ staged for packaging into the APK. All three are recreated by
+# tools/port/android-setup.sh, so committing them would only duplicate data
+# that is already tracked and bake in absolute paths from one machine.
+#
+# Note app/jni/src/kobo is NOT ignored: it is a relative symlink into this
+# repository's own src/, so it resolves correctly in any clone.
+android/app/jni/SDL
+android/app/jni/SDL2_image
+android/app/src/main/assets/
+
+# ---- Test and run output ---------------------------------------------------
+# The port's claims rest on logs, so transient output is ignored while
+# evidence checked in under docs/evidence/ is kept deliberately.
+*.log
+tools/port/out/
+
+# ---- macOS -----------------------------------------------------------------
+.DS_Store
+._*
+# Interrupted-save fragments. One of these ('.!31150!sofont.h') was committed
+# by accident during the SDL 2 port; the pattern is what an editor or a file
+# share leaves behind when a write to an open file is cut short.
+.!*!*

@@ -5,6 +5,7 @@
  * Copyright (C) §95, 1996 Akira Higuchi
  * Copyright (C) 2001-2003, 2005-2007, 2020 David Olofson
  * Copyright (C) 2005 Erik Auerswald
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -63,11 +64,16 @@ extern "C" {
 
 #define	MAX_FPS_RESULTS	64
 
-/* Joystick support */
-#define DEFAULT_JOY_LR		0	// Joystick axis left-right default
-#define DEFAULT_JOY_UD		1	// Joystick axis up-down default
-#define DEFAULT_JOY_FIRE	0	// Default fire button on joystick
-#define DEFAULT_JOY_START	1
+/*
+ * Joystick support.
+ *
+ * The axis, hat and button mapping lives in prefs.cpp as ordinary
+ * preferences (js_lr, js_ud, js_hat, js_deadzone, js_fire, js_fire2,
+ * js_exit, js_menu, js_pause), not as constants here, because the indices
+ * belong to the device and the platform rather than to the game. Every one
+ * is also a "-<key> <value>" command line switch, so a mapping can be
+ * corrected on a new device without rebuilding.
+ */
 
 
 /*----------------------------------------------------------
@@ -134,6 +140,42 @@ static void setup_dirs(char *xpath)
 {
 	fmap->exepath(xpath);
 
+#ifdef __ANDROID__
+	/*
+	 * Android: the data is packaged inside the APK, and the only way to
+	 * read it is SDL_RWFromFile()'s asset manager fallback, which triggers
+	 * for a RELATIVE path and nothing else.
+	 *
+	 * So the asset roots are registered directly rather than through DATA.
+	 * Going via DATA would not work: paths are joined as "%s/%s", so an
+	 * empty data root yields "/gfx" -- absolute, and the fallback never
+	 * fires. "gfx" and "sfx" are the paths the packaging step creates
+	 * inside assets/, and they resolve to exactly what the asset manager
+	 * expects: "GFX>>foo.png" -> "gfx/foo.png".
+	 *
+	 * Neither host mechanism means anything here: KOBO_DATADIR is an
+	 * absolute path baked in on the build machine, and EXE>> derives from
+	 * argv[0], which on Android points at the native library directory
+	 * rather than anywhere data lives.
+	 */
+	fmap->addpath("GFX", "gfx");
+	fmap->addpath("SFX", "sfx");
+#else
+
+#ifdef __APPLE__
+	/*
+	 * Inside a .app bundle the data lives in Contents/Resources, alongside
+	 * the Contents/MacOS that holds the executable. Registered first so a
+	 * bundled copy is self-contained: it then needs neither the build
+	 * machine's install prefix nor anything else on the host to exist,
+	 * which is what makes the .app distributable at all.
+	 *
+	 * Harmless when running from a build tree, where this simply does not
+	 * resolve and the paths below are used instead.
+	 */
+	fmap->addpath("DATA", "EXE>>../Resources");
+#endif
+
 #ifdef KOBO_DATADIR
 	fmap->addpath("DATA", KOBO_DATADIR);
 #endif
@@ -153,17 +195,51 @@ static void setup_dirs(char *xpath)
 	/* Real data dir */
 	fmap->addpath("SFX", "DATA>>sfx");
 
+#endif	/* __ANDROID__ */
+
 	/*
 	 * Score files (user and global)
 	 */
-#ifdef KOBO_USERDIR
-	fmap->addpath("SCORES", KOBO_USERDIR);
-#endif
-
 	/*
-	 * Configuration files
+	 * Writable user data: scores, profiles and the config file.
+	 *
+	 * SDL_GetPrefPath() is the preferred location on every platform, and on
+	 * Android it is the only one that can work: there is no meaningful
+	 * $HOME there, so "HOME>>.kobodeluxe" cannot resolve at all, and
+	 * app-private storage is the only place the process may write.
+	 *
+	 * It also removes the need to create the directory: SDL_GetPrefPath()
+	 * creates it as a side effect and returns a path with a trailing
+	 * separator. That is why this is registered first -- it means the
+	 * Android build never depends on mkdir() succeeding, or on the app
+	 * having any idea what the device calls the user's account.
+	 *
+	 * The caller owns the returned string and must SDL_free() it.
 	 */
-#ifdef KOBO_USERDIR
+	{
+		char *prefpath = SDL_GetPrefPath(KOBO_ORGANIZATION,
+				KOBO_APPLICATION);
+		if(prefpath)
+		{
+			log_printf(VLOG, "User data directory: %s\n", prefpath);
+			fmap->addpath("SCORES", prefpath, 1);
+			fmap->addpath("CONFIG", prefpath, 1);
+			SDL_free(prefpath);
+		}
+		else
+			log_printf(WLOG, "SDL_GetPrefPath() failed: %s\n",
+					SDL_GetError());
+	}
+
+#if defined(KOBO_USERDIR) && !defined(__ANDROID__)
+	/*
+	 * The traditional ~/.kobodeluxe, kept as a lower priority fallback so
+	 * that saves made by an older build are still found. Created here
+	 * because nothing in the game ever did, which is why saving a profile
+	 * or a score used to fail outright on a machine without one.
+	 */
+	fmap->mkdir(KOBO_USERDIR, 0755);
+	fmap->addpath("SCORES", KOBO_USERDIR);
 	fmap->addpath("CONFIG", KOBO_USERDIR);
 #endif
 	/* System local */
@@ -304,10 +380,8 @@ class KOBO_main
 	static int		audio_vismode;
 #endif
 	static SDL_Joystick	*joystick;
-	static int		js_lr;
-	static int		js_ud;
-	static int		js_fire;
-	static int		js_start;
+	static SDL_GameController	*gamepad;
+	static SDL_JoystickID	js_instance;
 
 	static FILE		*logfile;
 
@@ -368,10 +442,8 @@ int		KOBO_main::audio_vismode = 0;
 #endif
 
 SDL_Joystick	*KOBO_main::joystick = NULL;
-int		KOBO_main::js_lr = DEFAULT_JOY_LR;
-int		KOBO_main::js_ud = DEFAULT_JOY_UD;
-int		KOBO_main::js_fire = DEFAULT_JOY_FIRE;
-int		KOBO_main::js_start = DEFAULT_JOY_START;
+SDL_GameController	*KOBO_main::gamepad = NULL;
+SDL_JoystickID	KOBO_main::js_instance = -1;
 
 FILE		*KOBO_main::logfile = NULL;
 
@@ -439,8 +511,10 @@ int KOBO_main::quit_requested()
 		  case SDL_QUIT:
 			exit_game_fast = 1;
 			break;
-		  case SDL_VIDEOEXPOSE:
-			gengine->invalidate();
+		  case SDL_WINDOWEVENT:
+			// SDL 2 folded SDL_VIDEOEXPOSE into SDL_WINDOWEVENT.
+			if(e.window.event == SDL_WINDOWEVENT_EXPOSED)
+				gengine->invalidate();
 			break;
 		  case SDL_KEYUP:
 			switch(e.key.keysym.sym)
@@ -1238,7 +1312,40 @@ int KOBO_main::init_js(prefs_t *p)
 	/* Activate Joystick sub-sys if we are using it */
 	if(p->use_joystick)
 	{
-		if(SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
+#ifdef __MACOSX__
+		/*
+		 * Disable SDL's MFI (GameController framework) driver.
+		 *
+		 * On recent macOS it claims generic USB HID gamepads and then
+		 * fails to expose them, so SDL_NumJoysticks() returns 0 with a
+		 * perfectly healthy pad attached and no error reported
+		 * anywhere. Verified with a Logitech F310 in DirectInput mode:
+		 * MFI on -> "No joysticks found!"; MFI off -> "Logitech Dual
+		 * Action", 4 axes, 12 buttons, 1 hat.
+		 *
+		 * Must be set before the joystick subsystem starts. Android has
+		 * no MFI driver, so this is host-side only.
+		 */
+		SDL_SetHint(SDL_HINT_JOYSTICK_MFI, "0");
+#endif
+		/*
+		 * SDL_INIT_GAMECONTROLLER, which implies SDL_INIT_JOYSTICK.
+		 *
+		 * The game controller layer is what makes this port usable on
+		 * the TV box. There, the app is launched from the remote and
+		 * there is no shell, no arguments and no reachable config file,
+		 * so a wrong button mapping cannot be corrected by hand -- it
+		 * has to be right unaided. SDL_GameController provides exactly
+		 * that: stable A/B/X/Y/Back/Start/D-pad identities, which on
+		 * Android SDL derives automatically from the capability bits it
+		 * packs into each pad's GUID
+		 * (SDL_CreateMappingForAndroidController()).
+		 *
+		 * The raw joystick path below is kept as a fallback for any pad
+		 * SDL has no mapping for, where the js_* preferences still
+		 * apply.
+		 */
+		if(SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) < 0)
 		{
 			log_printf(ELOG, "Error setting up joystick!\n");
 			return -1;
@@ -1249,11 +1356,137 @@ int KOBO_main::init_js(prefs_t *p)
 			SDL_JoystickEventState(SDL_ENABLE);
 			if(p->joystick_no >= p->number_of_joysticks)
 				p->joystick_no = 0;
+			log_printf(VLOG, "Joysticks found: %d\n",
+					p->number_of_joysticks);
+			for(int i = 0; i < p->number_of_joysticks; ++i)
+				log_printf(VLOG, "  %d: \"%s\"\n", i,
+						SDL_JoystickNameForIndex(i));
+
 			joystick = SDL_JoystickOpen(p->joystick_no);
 			if(!joystick)
 			{
-				SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+				log_printf(ELOG, "Could not open joystick %d:"
+						" %s\n", p->joystick_no,
+						SDL_GetError());
+				SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 				return -2;
+			}
+
+			if(SDL_IsGameController(p->joystick_no))
+			{
+				gamepad = SDL_GameControllerOpen(
+						p->joystick_no);
+				if(gamepad)
+				{
+					/*
+					 * Say so positively. On the TV box this
+					 * line is the difference between "SDL
+					 * knows this pad" and "we are guessing
+					 * button indices", and the absence of a
+					 * warning is not evidence of the former.
+					 */
+					char *map = SDL_GameControllerMapping(
+							gamepad);
+					log_printf(VLOG, "Game controller:"
+							" \"%s\"\n",
+							SDL_GameControllerName(
+							gamepad));
+					log_printf(VLOG, "     Mapping: %s\n",
+							map ? map : "(none)");
+					if(map)
+						SDL_free(map);
+				}
+				if(!gamepad)
+					log_printf(WLOG, "Could not open as a"
+							" game controller"
+							" (%s); falling back to"
+							" raw joystick.\n",
+							SDL_GetError());
+			}
+			else
+				log_printf(WLOG, "SDL has no game controller"
+						" mapping for this device;"
+						" falling back to the js_*"
+						" button preferences.\n");
+
+			/*
+			 * Report what the device actually is. Button and axis
+			 * indices are whatever the device claims -- they differ
+			 * between the same pad's X and D modes, and Android
+			 * derives them from its own keycode table -- so this
+			 * block is the only thing that says what any mapping
+			 * has to be written against.
+			 */
+			log_printf(VLOG, "Using joystick %d:\n",
+					p->joystick_no);
+			log_printf(VLOG, "         Name: %s\n",
+					SDL_JoystickName(joystick));
+			js_instance = SDL_JoystickInstanceID(joystick);
+			log_printf(VLOG, "  Instance ID: %d\n", js_instance);
+			log_printf(VLOG, "         Axes: %d\n",
+					SDL_JoystickNumAxes(joystick));
+			log_printf(VLOG, "      Buttons: %d\n",
+					SDL_JoystickNumButtons(joystick));
+			log_printf(VLOG, "         Hats: %d\n",
+					SDL_JoystickNumHats(joystick));
+
+			/*
+			 * Warn about a mapping that cannot work.
+			 *
+			 * The button handler tests these in a fixed order and
+			 * the first match wins, so binding two actions to one
+			 * button silently makes the later one unreachable. That
+			 * matters most for the exit button: it is the only way
+			 * out of every options screen, and on a device with no
+			 * keyboard, losing it means force-quitting the app.
+			 */
+			{
+				static const struct
+				{
+					const char	*name;
+					int		*btn;
+				} bindings[] = {
+					{ "fire",	&prefs->js_fire },
+					{ "fire2",	&prefs->js_fire2 },
+					{ "exit",	&prefs->js_exit },
+					{ "menu",	&prefs->js_menu },
+					{ "pause",	&prefs->js_pause },
+					{ "dpad_up",	&prefs->js_dpad_up },
+					{ "dpad_down",	&prefs->js_dpad_down },
+					{ "dpad_left",	&prefs->js_dpad_left },
+					{ "dpad_right",	&prefs->js_dpad_right }
+				};
+				int n = sizeof(bindings) / sizeof(bindings[0]);
+				int nbuttons = SDL_JoystickNumButtons(joystick);
+				for(int i = 0; i < n; ++i)
+				{
+					/* Negative means "not bound here". */
+					if(*bindings[i].btn < 0)
+						continue;
+					if(*bindings[i].btn >= nbuttons)
+						log_printf(WLOG, "Joystick"
+							" binding \"%s\" is"
+							" button %d, but this"
+							" device only has"
+							" %d!\n",
+							bindings[i].name,
+							*bindings[i].btn,
+							nbuttons);
+					for(int j = i + 1; j < n; ++j)
+						if((*bindings[j].btn >= 0) &&
+								(*bindings[i].btn ==
+								*bindings[j].btn))
+							log_printf(WLOG,
+							"Joystick bindings"
+							" \"%s\" and \"%s\""
+							" are both button"
+							" %d; \"%s\" will"
+							" never fire!\n",
+							bindings[i].name,
+							bindings[j].name,
+							*bindings[i].btn,
+							bindings[j].name);
+				}
 			}
 		}
 		else
@@ -1276,11 +1509,18 @@ void KOBO_main::close_js()
 	if(!joystick)
 		return;
 
-	if(SDL_JoystickOpened(0))
-		SDL_JoystickClose(joystick);
+	// SDL 2 removed SDL_JoystickOpened(); the non-NULL check above already
+	// tells us we have an open device, and it is the right one, which
+	// SDL_JoystickOpened(0) did not actually establish.
+	if(gamepad)
+	{
+		SDL_GameControllerClose(gamepad);
+		gamepad = NULL;
+	}
+	SDL_JoystickClose(joystick);
 	joystick = NULL;
 
-	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 }
 
 
@@ -1564,6 +1804,362 @@ kobo_gfxengine_t::kobo_gfxengine_t()
 }
 
 
+/*----------------------------------------------------------------------------
+	Joystick direction decoding
+----------------------------------------------------------------------------*/
+/*
+ * Upstream decoded the two stick axes independently, each against a hardcoded
+ * +/-3200 threshold, and had no D-pad support at all. Two things were wrong
+ * with that beyond the missing hat:
+ *
+ *   - A per-axis threshold gives a square deadzone, so the stick engages
+ *     sooner on the diagonals than on the cardinals, and a stick resting just
+ *     inside the corner of the square reads as a held diagonal.
+ *   - Decoding each axis event on its own lets a single physical push emit two
+ *     different directions, because SDL reports X and Y as separate events.
+ *
+ * Both are fixed by keeping the last known value of each axis and deriving one
+ * direction from the pair, which is what js_dir_from_axes() does: a *radial*
+ * deadzone, then a quantisation to the same eight directions the numpad
+ * produces.
+ */
+
+
+/*
+ * Hysteresis. Without it, a stick held near a boundary flips repeatedly
+ * between two neighbouring directions: measured over one play session, 32.5%
+ * of all direction changes were an immediate reversal (A -> B -> A), which is
+ * what makes analog control of an 8-way game feel unsteady.
+ *
+ * KOBO_JS_SECTOR_HYST is in units of 45 degree sectors, so 0.15 means the
+ * stick has to travel about 7 degrees past the boundary before the direction
+ * gives way. KOBO_JS_DEADZONE_HYST does the same for the centre, so that a
+ * stick hovering at the edge of the deadzone does not flicker between "held"
+ * and "released".
+ */
+#define	KOBO_JS_SECTOR_HYST	0.15
+#define	KOBO_JS_DEADZONE_HYST	3
+
+static int js_axis_x = 0;		/* last known raw axis values */
+static int js_axis_y = 0;
+static int js_stick_dir = -1;		/* BTN_* currently held, or -1 */
+static int js_hat_dir = -1;
+
+/* The eight directions, indexed by sector, starting at right and going CCW. */
+static const int js_sector_btn[8] = {
+	BTN_RIGHT, BTN_UR, BTN_UP, BTN_UL,
+	BTN_LEFT, BTN_DL, BTN_DOWN, BTN_DR
+};
+
+
+static int js_dir_from_axes(int x, int y, int current)
+{
+	double mag = sqrt((double)x * x + (double)y * y);
+
+	/*
+	 * A lower threshold to let go than to engage, so that a stick resting
+	 * right at the edge of the deadzone stays decided one way or the other.
+	 */
+	double limit = 32767.0 * (current < 0 ? prefs->js_deadzone :
+			prefs->js_deadzone - KOBO_JS_DEADZONE_HYST) / 100.0;
+	if(mag < limit)
+		return -1;
+
+	/*
+	 * Screen Y grows downwards, so negate it to get a conventional angle.
+	 * Working in units of 45 degrees makes a sector index a simple round,
+	 * and gives each direction an equal share -- unlike a per-axis
+	 * threshold, which hands the diagonals a larger slice.
+	 */
+	double a = atan2(-(double)y, (double)x) / (M_PI / 4.0);
+	if(a < 0.0)
+		a += 8.0;
+
+	/* Hold the current direction until the stick clears the boundary. */
+	if(current >= 0)
+		for(int i = 0; i < 8; ++i)
+			if(js_sector_btn[i] == current)
+			{
+				double d = a - i;
+				while(d > 4.0)
+					d -= 8.0;
+				while(d < -4.0)
+					d += 8.0;
+				if(fabs(d) < 0.5 + KOBO_JS_SECTOR_HYST)
+					return current;
+				break;
+			}
+
+	return js_sector_btn[(int)floor(a + 0.5) & 7];
+}
+
+
+/*
+ * D-pad delivered as four separate buttons rather than a hat.
+ *
+ * This is how Android presents it: Android_AddJoystick() folds any hat the
+ * device reports into D-pad buttons and then sets the hat count to zero
+ * (SDL_sysjoystick.c), so SDL_JOYHATMOTION never arrives there at all and the
+ * hat path below would leave the D-pad completely dead.
+ *
+ * The four buttons are independent, so their held state is accumulated into a
+ * mask and decoded as a unit -- otherwise a diagonal, which is two separate
+ * button events, could never produce a diagonal direction.
+ */
+#define	JS_DPAD_UP	1
+#define	JS_DPAD_DOWN	2
+#define	JS_DPAD_LEFT	4
+#define	JS_DPAD_RIGHT	8
+
+static int js_dpad_mask = 0;
+
+/*
+ * Latched input state, decoded once per frame by js_decode_frame().
+ *
+ * Events must not decode a direction as they arrive. One physical movement
+ * can span several events -- a hat that SDL has split into four D-pad
+ * buttons sends a release and a press for UR -> UP, and the two stick axes
+ * are always reported separately -- so decoding per event emits intermediate
+ * directions the player never selected. Measured over one session, 34.9% of
+ * D-pad transitions were an immediate A -> B -> A reversal, some of them in
+ * the same millisecond.
+ *
+ * This matters most on Android, where SDL reports no hats at all and the
+ * D-pad arrives ONLY as those four buttons.
+ */
+static Uint8 js_hat_value = SDL_HAT_CENTERED;
+
+
+/* The mask bit for a button index, or 0 if it is not a D-pad button. */
+static int js_dpad_bit(int button)
+{
+	if(button < 0)
+		return 0;	/* -1 means "no such binding" */
+	if(button == prefs->js_dpad_up)
+		return JS_DPAD_UP;
+	if(button == prefs->js_dpad_down)
+		return JS_DPAD_DOWN;
+	if(button == prefs->js_dpad_left)
+		return JS_DPAD_LEFT;
+	if(button == prefs->js_dpad_right)
+		return JS_DPAD_RIGHT;
+	return 0;
+}
+
+
+static int js_dir_from_dpad(int mask)
+{
+	/* Opposite directions cancel, as they do on a physical hat. */
+	if((mask & (JS_DPAD_UP | JS_DPAD_DOWN)) == (JS_DPAD_UP | JS_DPAD_DOWN))
+		mask &= ~(JS_DPAD_UP | JS_DPAD_DOWN);
+	if((mask & (JS_DPAD_LEFT | JS_DPAD_RIGHT)) ==
+			(JS_DPAD_LEFT | JS_DPAD_RIGHT))
+		mask &= ~(JS_DPAD_LEFT | JS_DPAD_RIGHT);
+
+	switch(mask)
+	{
+	  case JS_DPAD_UP:			return BTN_UP;
+	  case JS_DPAD_DOWN:			return BTN_DOWN;
+	  case JS_DPAD_LEFT:			return BTN_LEFT;
+	  case JS_DPAD_RIGHT:			return BTN_RIGHT;
+	  case JS_DPAD_UP | JS_DPAD_LEFT:	return BTN_UL;
+	  case JS_DPAD_UP | JS_DPAD_RIGHT:	return BTN_UR;
+	  case JS_DPAD_DOWN | JS_DPAD_LEFT:	return BTN_DL;
+	  case JS_DPAD_DOWN | JS_DPAD_RIGHT:	return BTN_DR;
+	  default:				return -1;	/* centred */
+	}
+}
+
+
+/*
+ * Game controller mappings.
+ *
+ * Unlike the js_* preferences, these need no per-device or per-platform
+ * tuning: SDL_CONTROLLER_BUTTON_A is the A button on any pad SDL can map, so
+ * there is nothing to guess and nothing for a player to correct -- which is
+ * the whole point on a device that is launched from a TV remote.
+ */
+static int gc_dpad_bit(int button)
+{
+	switch(button)
+	{
+	  case SDL_CONTROLLER_BUTTON_DPAD_UP:		return JS_DPAD_UP;
+	  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:		return JS_DPAD_DOWN;
+	  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:		return JS_DPAD_LEFT;
+	  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:	return JS_DPAD_RIGHT;
+	  default:					return 0;
+	}
+}
+
+
+static int gc_action(int button)
+{
+	switch(button)
+	{
+	  /* Both face buttons fire; neither may open the pause menu. */
+	  case SDL_CONTROLLER_BUTTON_A:
+	  case SDL_CONTROLLER_BUTTON_X:		return BTN_FIRE;
+
+	  /* B is the conventional cancel, and the way out of every screen. */
+	  case SDL_CONTROLLER_BUTTON_B:		return BTN_EXIT;
+
+	  case SDL_CONTROLLER_BUTTON_BACK:
+	  case SDL_CONTROLLER_BUTTON_START:	return BTN_PAUSE;
+
+	  default:				return -1;
+	}
+}
+
+
+static int js_dir_from_hat(Uint8 hat)
+{
+	switch(hat)
+	{
+	  case SDL_HAT_UP:		return BTN_UP;
+	  case SDL_HAT_DOWN:		return BTN_DOWN;
+	  case SDL_HAT_LEFT:		return BTN_LEFT;
+	  case SDL_HAT_RIGHT:		return BTN_RIGHT;
+	  case SDL_HAT_LEFTUP:		return BTN_UL;
+	  case SDL_HAT_RIGHTUP:		return BTN_UR;
+	  case SDL_HAT_LEFTDOWN:	return BTN_DL;
+	  case SDL_HAT_RIGHTDOWN:	return BTN_DR;
+	  default:			return -1;	/* centred */
+	}
+}
+
+
+/*
+ * Emit press/release edges for a change of direction. Releasing the old
+ * direction before pressing the new one matters: without it a held direction
+ * is left stuck down when the stick crosses from one sector to another.
+ */
+static const char *js_dir_name(int dir)
+{
+	switch(dir)
+	{
+	  case BTN_UP:		return "UP";
+	  case BTN_DOWN:	return "DOWN";
+	  case BTN_LEFT:	return "LEFT";
+	  case BTN_RIGHT:	return "RIGHT";
+	  case BTN_UL:		return "UL";
+	  case BTN_UR:		return "UR";
+	  case BTN_DL:		return "DL";
+	  case BTN_DR:		return "DR";
+	  default:		return "centre";
+	}
+}
+
+
+/* Defined below, next to the direction helpers it belongs with. */
+static void js_set_dir(const char *source, int *current, int newdir);
+
+
+/*
+ * Decode the latched input state into at most one direction change per source,
+ * per frame.
+ *
+ * Everything above only records what the hardware reported; this is the single
+ * place a direction is derived and press/release edges are emitted. That is
+ * what stops one physical movement -- which can arrive as several events --
+ * from producing intermediate directions nobody asked for.
+ */
+static void js_decode_frame(void)
+{
+	/*
+	 * A real hat reports an absolute position, so it wins outright when one
+	 * is present. Where SDL gives no hat (Android), js_hat_value stays
+	 * centred and the four D-pad buttons are the only source.
+	 */
+	int dpad = js_hat_value != SDL_HAT_CENTERED ?
+			js_dir_from_hat(js_hat_value) :
+			js_dir_from_dpad(js_dpad_mask);
+
+	js_set_dir("D-pad", &js_hat_dir, dpad);
+	js_set_dir("stick", &js_stick_dir,
+			js_dir_from_axes(js_axis_x, js_axis_y, js_stick_dir));
+}
+
+
+/*
+ * Auto-repeat for a held direction, in menus and forms.
+ *
+ * A keyboard gets this free from the OS, but a joystick direction is
+ * synthesized from a single physical transition, so without this every step of
+ * a long list or a numeric value costs one discrete press. That is merely
+ * tedious with a keyboard to fall back on, and close to unusable on a TV box
+ * where the pad is the only input device.
+ *
+ * Repeats go to the game state machine only, never to gamecontrol_t: in-game
+ * movement is driven by the held direction that is already latched there, and
+ * re-pressing it would fight that. This also makes the repeat harmless during
+ * play, because st_game_t::press() does not act on directions at all -- so
+ * there is no need to detect "are we in a menu", which would otherwise have to
+ * be kept in step with every state in the game.
+ */
+#define	KOBO_JS_UI_REPEAT_DELAY		375	/* ms before the first repeat */
+#define	KOBO_JS_UI_REPEAT_INTERVAL	80	/* ms between repeats */
+
+static int	js_repeat_dir = -1;
+static Uint32	js_repeat_due = 0;
+
+
+static void js_ui_repeat(void)
+{
+	/* The D-pad wins if both are pushed; it is the more deliberate input. */
+	int dir = js_hat_dir >= 0 ? js_hat_dir : js_stick_dir;
+	Uint32 now = SDL_GetTicks();
+
+	if(dir < 0)
+	{
+		js_repeat_dir = -1;
+		return;
+	}
+
+	if(dir != js_repeat_dir)
+	{
+		/*
+		 * Newly held. The press edge has already been delivered by
+		 * js_set_dir(), so only arm the timer here. Re-derived from the
+		 * live direction every frame rather than tracked by events, so
+		 * that anything which clears the direction without an event --
+		 * a state change, a lost device -- cannot leave a repeat
+		 * running against a direction nobody is holding.
+		 */
+		js_repeat_dir = dir;
+		js_repeat_due = now + KOBO_JS_UI_REPEAT_DELAY;
+		return;
+	}
+
+	if(now < js_repeat_due)
+		return;
+
+	js_repeat_due = now + KOBO_JS_UI_REPEAT_INTERVAL;
+	gsm.press(dir);
+	log_printf(DLOG, "Joystick UI repeat: %s\n", js_dir_name(dir));
+}
+
+
+static void js_set_dir(const char *source, int *current, int newdir)
+{
+	if(*current == newdir)
+		return;
+
+	if(*current >= 0)
+	{
+		gamecontrol.release(*current);
+		gsm.release(*current);
+	}
+	if(newdir >= 0)
+	{
+		gamecontrol.press(newdir);
+		gsm.press(newdir);
+	}
+	log_printf(DLOG, "Joystick %s: %s -> %s\n", source,
+			js_dir_name(*current), js_dir_name(newdir));
+	*current = newdir;
+}
+
+
 void kobo_gfxengine_t::frame()
 {
 	sound.frame();
@@ -1641,7 +2237,7 @@ void kobo_gfxengine_t::frame()
 			}
 			k = gamecontrol.map(ev.key.keysym.sym);
 			gamecontrol.press(k);
-			gsm.press(k, ev.key.keysym.unicode);
+			gsm.press(k, kobo12_KeysymChar(&ev.key.keysym));
 			break;
 		  case SDL_KEYUP:
 			if((ev.key.keysym.sym == SDLK_ESCAPE) && km.escape_hammering())
@@ -1679,82 +2275,287 @@ void kobo_gfxengine_t::frame()
 				gsm.release(k);
 			}
 			break;
-		  case SDL_VIDEOEXPOSE:
-			gengine->invalidate();
-			break;
-		  case SDL_ACTIVEEVENT:
-			// Any type of focus loss should activate pause mode!
-			if(!ev.active.gain && ev.active.state != SDL_APPINPUTFOCUS)
+		  case SDL_WINDOWEVENT:
+			// SDL 2 folded SDL_VIDEOEXPOSE and SDL_ACTIVEEVENT into
+			// this one event with a sub-type.
+			switch(ev.window.event)
+			{
+			  case SDL_WINDOWEVENT_EXPOSED:
+				gengine->invalidate();
+				break;
+			  // Any type of focus loss should activate pause mode!
+			  //
+			  // Note this is a deliberate behaviour change. The 1.2
+			  // code tested "!gain && state != SDL_APPINPUTFOCUS",
+			  // which paused on losing *mouse* focus but NOT on
+			  // losing keyboard focus -- the opposite of what its
+			  // own comment says, and almost certainly not what was
+			  // meant. SDL 2 has no equivalent of that bitmask, and
+			  // reproducing the quirk would mean a game that keeps
+			  // running while you alt-tab away from it. Pausing on
+			  // real focus loss is what the comment asks for and
+			  // what a player expects on both a Mac and a TV box.
+			  case SDL_WINDOWEVENT_FOCUS_LOST:
+			  case SDL_WINDOWEVENT_MINIMIZED:
+			  case SDL_WINDOWEVENT_HIDDEN:
 				km.pause_game();
+				break;
+			  default:
+				break;
+			}
 			break;
 		  case SDL_QUIT:
 			/*gsm.press(BTN_CLOSE);*/
 			km.brutal_quit();
 			break;
+		  case SDL_CONTROLLERBUTTONDOWN:
+		  case SDL_CONTROLLERBUTTONUP:
+		  {
+			int down = (ev.type == SDL_CONTROLLERBUTTONDOWN);
+			int bit = gc_dpad_bit(ev.cbutton.button);
+			int act;
+			if(bit)
+			{
+				if(down)
+					js_dpad_mask |= bit;
+				else
+					js_dpad_mask &= ~bit;
+				break;		/* decoded once per frame */
+			}
+			act = gc_action(ev.cbutton.button);
+			if(act >= 0)
+			{
+				if(down)
+				{
+					gamecontrol.press(act);
+					gsm.press(act);
+				}
+				else
+				{
+					gamecontrol.release(act);
+					gsm.release(act);
+				}
+			}
+			log_printf(DLOG, "Controller \"%s\" %s\n",
+					SDL_GameControllerGetStringForButton(
+					(SDL_GameControllerButton)
+					ev.cbutton.button),
+					down ? "down" : "up");
+			break;
+		  }
+
+		  case SDL_CONTROLLERAXISMOTION:
+			if(ev.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+				js_axis_x = ev.caxis.value;
+			else if(ev.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+				js_axis_y = ev.caxis.value;
+			else
+				break;		/* right stick, triggers */
+			break;			/* decoded once per frame */
+
+		  case SDL_JOYDEVICEADDED:
+			/*
+			 * NOTE: 'which' is a DEVICE INDEX in this event, but an
+			 * INSTANCE ID in SDL_JOYDEVICEREMOVED below. Same field,
+			 * different namespace, and they only coincide for the
+			 * first device of a fresh process.
+			 *
+			 * SDL also queues one of these for every device already
+			 * present at startup, so the check for an open device is
+			 * what stops the pad being opened twice.
+			 */
+			if(!km.joystick)
+			{
+				log_printf(VLOG, "Joystick added (device index"
+						" %d)\n", ev.jdevice.which);
+				prefs->joystick_no = ev.jdevice.which;
+				KOBO_main::init_js(prefs);
+			}
+			break;
+
+		  case SDL_JOYDEVICEREMOVED:
+			if(km.joystick &&
+					(ev.jdevice.which == km.js_instance))
+			{
+				log_printf(WLOG, "Joystick removed (instance"
+						" %d) - this is the device in"
+						" use!\n", ev.jdevice.which);
+
+				/*
+				 * Drop any held direction BEFORE closing, or
+				 * the ship keeps flying with nothing left to
+				 * steer it. SDL zeroes axis values just before
+				 * sending this event, so the held state may
+				 * never be observed any other way.
+				 */
+				js_set_dir("stick", &js_stick_dir, -1);
+				js_set_dir("D-pad", &js_hat_dir, -1);
+				js_axis_x = js_axis_y = 0;
+				js_dpad_mask = 0;
+				js_hat_value = SDL_HAT_CENTERED;
+
+				/*
+				 * Close the device but NOT the subsystem --
+				 * quitting it would stop the "added" events
+				 * that make replugging work.
+				 */
+				if(km.gamepad)
+				{
+					SDL_GameControllerClose(km.gamepad);
+					km.gamepad = NULL;
+				}
+				SDL_JoystickClose(km.joystick);
+				km.joystick = NULL;
+				km.js_instance = -1;
+
+				/*
+				 * One USB port on the target, and the pad is
+				 * in it. Losing it mid-game would otherwise
+				 * leave the player under fire with no input.
+				 */
+				if(!manage.game_stopped())
+					km.pause_game();
+			}
+			break;
+
 		  case SDL_JOYBUTTONDOWN:
-			if(ev.jbutton.button == km.js_fire)
+			/*
+			 * SDL sends both controller and raw joystick
+			 * events for the same device, so ignore these
+			 * whenever the controller layer is handling it.
+			 */
+			if(km.gamepad)
+				break;
+			/*
+			 * D-pad first, and consumed here: on Android these ARE
+			 * the D-pad, and must not fall through to the action
+			 * bindings below.
+			 */
+			if(js_dpad_bit(ev.jbutton.button))
+			{
+				js_dpad_mask |= js_dpad_bit(ev.jbutton.button);
+				log_printf(DLOG, "Joystick button %d down"
+						" (D-pad)\n", ev.jbutton.button);
+				break;
+			}
+			if(ev.jbutton.button == prefs->js_fire)
 			{
 				gamecontrol.press(BTN_FIRE);
 				gsm.press(BTN_FIRE);
 			}
-			else if(ev.jbutton.button == km.js_start)
+			else if(ev.jbutton.button == prefs->js_fire2)
 			{
-				gamecontrol.press(BTN_START);
-				gsm.press(BTN_START);
+				/*
+				 * A second fire button, NOT BTN_START.
+				 *
+				 * st_game_t::press() treats BTN_START exactly
+				 * like BTN_PAUSE, so while this button was
+				 * mapped to BTN_START it opened the pause menu
+				 * in the middle of play. BTN_FIRE is what a
+				 * face button should do in a shooter, and menus
+				 * accept it to activate the selected entry
+				 * (st_menu_base_t::press()), so it stays useful
+				 * outside the game too.
+				 */
+				gamecontrol.press(BTN_FIRE);
+				gsm.press(BTN_FIRE);
 			}
+			else if((ev.jbutton.button == prefs->js_pause) ||
+					(ev.jbutton.button == prefs->js_menu))
+			{
+				/* Start and Back both open the pause menu. */
+				gamecontrol.press(BTN_PAUSE);
+				gsm.press(BTN_PAUSE);
+			}
+			else if(ev.jbutton.button == prefs->js_exit)
+			{
+				gamecontrol.press(BTN_EXIT);
+				gsm.press(BTN_EXIT);
+			}
+			log_printf(DLOG, "Joystick button %d down\n",
+					ev.jbutton.button);
 			break;
 		  case SDL_JOYBUTTONUP:
-			if(ev.jbutton.button == km.js_fire)
+			/*
+			 * SDL sends both controller and raw joystick
+			 * events for the same device, so ignore these
+			 * whenever the controller layer is handling it.
+			 */
+			if(km.gamepad)
+				break;
+			if(js_dpad_bit(ev.jbutton.button))
+			{
+				js_dpad_mask &= ~js_dpad_bit(ev.jbutton.button);
+				break;		/* decoded once per frame */
+			}
+			if(ev.jbutton.button == prefs->js_fire)
 			{
 				gamecontrol.release(BTN_FIRE);
 				gsm.release(BTN_FIRE);
 			}
+			else if(ev.jbutton.button == prefs->js_fire2)
+			{
+				/*
+				 * Upstream never released this button at all,
+				 * so gamecontrol_t's state bitmask kept the bit
+				 * set for the rest of the session.
+				 */
+				gamecontrol.release(BTN_FIRE);
+				gsm.release(BTN_FIRE);
+			}
+			else if((ev.jbutton.button == prefs->js_pause) ||
+					(ev.jbutton.button == prefs->js_menu))
+			{
+				gamecontrol.release(BTN_PAUSE);
+				gsm.release(BTN_PAUSE);
+			}
+			else if(ev.jbutton.button == prefs->js_exit)
+			{
+				gamecontrol.release(BTN_EXIT);
+				gsm.release(BTN_EXIT);
+			}
 			break;
 		  case SDL_JOYAXISMOTION:
-			// FIXME: We will want to allow these to be
-			// redefined, but for now, this works ;-)
-			if(ev.jaxis.axis == km.js_lr)
-			{
-				if(ev.jaxis.value < -3200)
-				{
-					gamecontrol.press(BTN_LEFT);
-					gsm.press(BTN_LEFT);
-				}
-				else if(ev.jaxis.value > 3200)
-				{
-					gamecontrol.press(BTN_RIGHT);
-					gsm.press(BTN_RIGHT);
-				}
-				else
-				{
-					gamecontrol.release(BTN_LEFT);
-					gamecontrol.release(BTN_RIGHT);
-					gsm.release(BTN_LEFT);
-					gsm.release(BTN_RIGHT);
-				}
-
-			}
-			else if(ev.jaxis.axis == km.js_ud)
-			{
-				if(ev.jaxis.value < -3200)
-				{
-					gamecontrol.press(BTN_UP);
-					gsm.press(BTN_UP);
-				}
-				else if(ev.jaxis.value > 3200)
-				{
-					gamecontrol.press(BTN_DOWN);
-					gsm.press(BTN_DOWN);
-				}
-				else
-				{
-					gamecontrol.release(BTN_UP);
-					gamecontrol.release(BTN_DOWN);
-					gsm.release(BTN_UP);
-					gsm.release(BTN_DOWN);
-				}
-
-			}
+			/*
+			 * SDL sends both controller and raw joystick
+			 * events for the same device, so ignore these
+			 * whenever the controller layer is handling it.
+			 */
+			if(km.gamepad)
+				break;
+			/*
+			 * Remember this axis and re-derive the direction from
+			 * both of them. Deciding from one axis at a time is what
+			 * let a single diagonal push emit two directions.
+			 */
+			if(ev.jaxis.axis == prefs->js_lr)
+				js_axis_x = ev.jaxis.value;
+			else if(ev.jaxis.axis == prefs->js_ud)
+				js_axis_y = ev.jaxis.value;
+			else
+				break;		/* an axis we do not use */
+			break;			/* decoded once per frame */	/* upstream fell through into SDL_MOUSEMOTION
+				 * here, which then read ev.motion.x/y out of
+				 * what is really an SDL_JoyAxisEvent -- feeding
+				 * garbage coordinates to the mouse handler on
+				 * every single stick sample. */
+		  case SDL_JOYHATMOTION:
+			/*
+			 * SDL sends both controller and raw joystick
+			 * events for the same device, so ignore these
+			 * whenever the controller layer is handling it.
+			 */
+			if(km.gamepad)
+				break;
+			/*
+			 * D-pad. Upstream had no hat handling whatsoever, so the
+			 * D-pad did nothing at all. All eight positions are
+			 * decoded, exactly as the numpad keys are.
+			 */
+			if(ev.jhat.hat != prefs->js_hat)
+				break;		/* a hat we do not use */
+			js_hat_value = ev.jhat.value;
+			break;			/* decoded once per frame */
 		  case SDL_MOUSEMOTION:
 			mouse_x = (int)(ev.motion.x / gengine->xscale()) - km.xoffs;
 			mouse_y = (int)(ev.motion.y / gengine->yscale()) - km.yoffs;
@@ -1818,6 +2619,12 @@ void kobo_gfxengine_t::frame()
 		}
 	}
 	gamecontrol.process();
+
+	/* One direction change per source per frame, from the latched state. */
+	js_decode_frame();
+
+	/* Auto-repeat a held joystick direction into the UI. */
+	js_ui_repeat();
 
 	/*
 	 * Run the current gamestate for one frame
@@ -2042,6 +2849,32 @@ extern "C" RETSIGTYPE breakhandler(int dummy)
 int main(int argc, char *argv[])
 {
 	int cmd_exit = 0;
+
+	/*
+	 * Line buffering, before anything can be logged.
+	 *
+	 * Block buffering loses exactly the startup diagnostics you need when
+	 * the game dies during init, and it interleaves badly with unbuffered
+	 * stderr when both go to one pipe. It matters more on the Android
+	 * target, where stdout goes to logcat.
+	 */
+	setvbuf(stdout, NULL, _IOLBF, 0);
+
+#ifdef __ANDROID__
+	/*
+	 * Deliver the Back button to the game instead of letting Android act
+	 * on it.
+	 *
+	 * On a TV box the app is launched from the remote, and the remote's
+	 * Back key is an ordinary Android Back: untrapped, it finishes the
+	 * activity, so pressing it anywhere in the game quits outright rather
+	 * than leaving the current screen. Trapped, it arrives as SDLK_AC_BACK
+	 * and gamecontrol_t::map() turns it into BTN_EXIT, which is what backs
+	 * out of a screen everywhere else.
+	 */
+	SDL_SetHint(SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1");
+#endif
+
 	atexit(emergency_close);
 	signal(SIGTERM, breakhandler);
 	signal(SIGINT, breakhandler);

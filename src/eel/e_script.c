@@ -4,6 +4,7 @@
 ---------------------------------------------------------------------------
  * Copyright (C) 2002, David Olofson
  * Copyright (C) 2002, Florian Schulze <fs@crowproductions.de>
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "SDL.h"
 
 #include "config.h"
 #include "_e_script.h"
@@ -52,7 +55,8 @@ int eel_script_alloc()
 
 int eel_load(const char *filename)
 {
-	FILE *f;
+	SDL_RWops *f;
+	Sint64 size;
 	int h = eel_script_alloc();
 	if(h < 0)
 		return h;
@@ -72,40 +76,50 @@ int eel_load(const char *filename)
 #endif
 	strcat(eel_scripttab[h].name, filename);
 
-	f = fopen(eel_scripttab[h].name, "rb");
+	/*
+	 * SDL_RWops rather than stdio, so that bundled data can be read on
+	 * Android, where it lives inside the APK and not on any filesystem the
+	 * process can open(). SDL_RWFromFile() transparently falls back to the
+	 * asset manager for a relative path, which is the only route to it.
+	 *
+	 * This also flattens the original nest of seek/tell error branches --
+	 * SDL_RWsize() answers in one call what fseek/ftell/fseek did in three.
+	 */
+	f = SDL_RWFromFile(eel_scripttab[h].name, "rb");
 	if(!f)
 		return -1;
 
-	if(fseek(f, 0, SEEK_END) == 0)
+	size = SDL_RWsize(f);
+	if(size < 0)
 	{
-		eel_scripttab[h].len = ftell(f);
-		if(fseek(f, 0, SEEK_SET) == 0)
-		{
-			eel_scripttab[h].data = (unsigned char *)malloc(
-					eel_scripttab[h].len + 1);
-			if(eel_scripttab[h].data)
-			{
-				if(fread(eel_scripttab[h].data,
-						eel_scripttab[h].len,
-						1, f) == 1)
-				{
-					fclose(f);
-					DBG(log_printf(DLOG, "Loaded script \"%s\"."
-							" (Handle %d)\n",
-							eel_scripttab[h].name,
-							h);)
-					return h;
-				}
-				DBG(printf("eel_load(): Read error!\n");)
-				eel_free(h);
-			}
-			DBG(printf("eel_load(): Memory allocation error!\n");)
-		}
-		DBG(printf("eel_load(): Rewind error!\n");)
+		DBG(printf("eel_load(): Could not determine size!\n");)
+		SDL_RWclose(f);
+		return -2;
 	}
-	DBG(printf("eel_load(): Seek-to-end error!\n");)
-	fclose(f);
-	return -2;
+	eel_scripttab[h].len = (int)size;
+
+	eel_scripttab[h].data = (unsigned char *)malloc(
+			eel_scripttab[h].len + 1);
+	if(!eel_scripttab[h].data)
+	{
+		DBG(printf("eel_load(): Memory allocation error!\n");)
+		SDL_RWclose(f);
+		return -2;
+	}
+
+	if(eel_scripttab[h].len && (SDL_RWread(f, eel_scripttab[h].data,
+			eel_scripttab[h].len, 1) != 1))
+	{
+		DBG(printf("eel_load(): Read error!\n");)
+		SDL_RWclose(f);
+		eel_free(h);
+		return -2;
+	}
+
+	SDL_RWclose(f);
+	DBG(log_printf(DLOG, "Loaded script \"%s\". (Handle %d)\n",
+			eel_scripttab[h].name, h);)
+	return h;
 }
 
 

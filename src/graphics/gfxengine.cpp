@@ -3,6 +3,7 @@
 	gfxengine.cpp - Graphics Engine
 ----------------------------------------------------------------------
  * Copyright (C) 2001-2003, 2006-2007 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +30,7 @@
 #include "gfxengine.h"
 #include "filters.h"
 #include "SDL_image.h"
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 #include "sofont.h"
 #include "window.h"
 
@@ -764,8 +765,10 @@ int gfxengine_t::show()
 	if(is_showing)
 		return 0;
 
-	if(_centered && !_fullscreen)
-		SDL_putenv((char *)"SDL_VIDEO_CENTERED=1");
+	// SDL 2 dropped SDL_putenv(), and the SDL_VIDEO_CENTERED hint it set
+	// went with it -- window position is an explicit argument now, and
+	// kobo12_SetVideoMode() always passes SDL_WINDOWPOS_CENTERED.
+	(void)_centered;
 
 	log_printf(DLOG, "Opening screen...\n");
 	if(!SDL_WasInit(SDL_INIT_VIDEO))
@@ -775,35 +778,19 @@ int gfxengine_t::show()
 			return -2;
 		}
 
-	switch(_driver)
-	{
-	  case GFX_DRIVER_SDL2D:
-		break;
-	  case GFX_DRIVER_GLSDL:
-		if(!_doublebuf)
-		{
-			log_printf(WLOG, "Only double buffering is supported"
-					" with OpenGL drivers!\n");
-			doublebuffer(1);
-		}
-		if(_shadow)
-		{
-			log_printf(WLOG, "Shadow buffer not supported"
-					" with OpenGL drivers!\n");
-			shadow(0);
-		}
-		break;
-	}
-
-	switch(_driver)
-	{
-	  case GFX_DRIVER_SDL2D:
-		/* Nothing extra */
-		break;
-	  case GFX_DRIVER_GLSDL:
-	  	flags |= SDL_GLSDL;
-		break;
-	}
+	/*
+	 * The GFX_DRIVER_GLSDL branches that stood here are gone with glSDL
+	 * itself. There is no longer a driver choice to make: rendering goes
+	 * through SDL_Render, which selects its own backend (Metal on macOS,
+	 * GLES2 on Android, software as a fallback) and reports which at
+	 * startup via kobo12_RendererName().
+	 *
+	 * The enum value is kept so that existing config files, which may have
+	 * videodriver set to GLSDL, still load instead of being rejected. It
+	 * now selects the same path as GFX_DRIVER_SDL2D, and the double-buffer
+	 * and shadow-buffer restrictions the OpenGL path imposed no longer
+	 * apply to it.
+	 */
 
 	if(_doublebuf)
 		flags |= SDL_DOUBLEBUF | SDL_HWSURFACE;
@@ -816,7 +803,7 @@ int gfxengine_t::show()
 	if(_fullscreen)
 		flags |= SDL_FULLSCREEN;
 
-	glSDL_VSync(_vsync);
+	kobo12_VSync(_vsync);
 	flags |= xflags;
 
 	screen_surface = SDL_SetVideoMode(_width, _height, _depth, flags);

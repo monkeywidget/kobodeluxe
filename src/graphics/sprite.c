@@ -3,6 +3,7 @@
 	sprite.c - Sprite engine for use with cs.h
 ----------------------------------------------------------------------
  * Copyright (C) 2001, 2003, 2007 David Olofson
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +30,7 @@ TODO: tables as needed when loading banks.
 #include <stdlib.h>
 #include <string.h>
 #include "logger.h"
-#include "glSDL.h"
+#include "kobo_sdl12.h"
 #include "SDL_image.h"
 #include "sprite.h"
 #include "filters.h"
@@ -381,18 +382,51 @@ static int extract_sprite(s_bank_t *bank, unsigned frame,
 	}
 	SDL_UnlockSurface(src);
 
+	/*
+	 * Copy palette, alpha and colorkey.
+	 *
+	 * All three of these moved out of the surface in SDL 2. SDL_SetColors()
+	 * is gone, and format->alpha and format->colorkey no longer exist --
+	 * nor do the SDL_SRCALPHA / SDL_SRCCOLORKEY bits in surface->flags that
+	 * the 1.2 code tested to decide whether there was anything to copy. So
+	 * the state has to be asked for rather than read, which is what the
+	 * accessors below do.
+	 */
+
 	/* Copy palette, if any */
-	if(src->format->palette)
-		SDL_SetColors(tmp, src->format->palette->colors, 0,
+	if(src->format->palette && tmp->format->palette)
+		SDL_SetPaletteColors(tmp->format->palette,
+				src->format->palette->colors, 0,
 				src->format->palette->ncolors);
 
-	/* Copy alpha and colorkey */
-	if(src->flags & SDL_SRCALPHA)
-		SDL_SetAlpha(tmp, src->flags & (SDL_SRCALPHA | SDL_RLEACCEL),
-				src->format->alpha);
-	if(src->flags & SDL_SRCCOLORKEY)
-		SDL_SetColorKey(tmp, src->flags & (SDL_SRCCOLORKEY | SDL_RLEACCEL),
-				src->format->colorkey);
+	/* Copy per-surface alpha, if the source is actually blending */
+	{
+		SDL_BlendMode blendmode;
+		Uint8 alpha;
+		if((SDL_GetSurfaceBlendMode(src, &blendmode) == 0) &&
+				(blendmode != SDL_BLENDMODE_NONE) &&
+				(SDL_GetSurfaceAlphaMod(src, &alpha) == 0))
+		{
+			SDL_SetSurfaceBlendMode(tmp, blendmode);
+			SDL_SetSurfaceAlphaMod(tmp, alpha);
+		}
+	}
+
+	/* Copy colorkey, if one is set. SDL_GetColorKey() fails if none is. */
+	{
+		Uint32 colorkey;
+		if(SDL_GetColorKey(src, &colorkey) == 0)
+		{
+			/*
+			 * SDL_SRCCOLORKEY, not SDL_TRUE: within this file
+			 * SDL_SetColorKey is still the 1.2-shaped shim entry
+			 * point, which tests for that flag. Passing SDL_TRUE
+			 * here would read as "no SDL_SRCCOLORKEY" and switch
+			 * the key off instead of on.
+			 */
+			SDL_SetColorKey(tmp, SDL_SRCCOLORKEY, colorkey);
+		}
+	}
 
 	bank->sprites[frame]->surface = tmp;
 

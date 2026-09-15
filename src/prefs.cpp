@@ -4,6 +4,7 @@
 ------------------------------------------------------------
  * Copyright (C) 2001-2003, 2007, 2020 David Olofson
  * Copyright (C) 2005 Erik Auerswald
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -41,8 +42,64 @@ void prefs_t::init()
 	key("logverbosity", logverbosity, 2); desc("Log Verbosity Level");
 
 	comment("--- Input options --------------------------");
-	yesno("joystick", use_joystick, 0); desc("Use Joystick");
+	// Default ON. With this off, init_js() returns before SDL_JoystickOpen()
+	// is ever called, so the game presents as having no gamepad support at
+	// all -- no error, no log line, nothing. On the Android TV target the
+	// pad is the only input device there is.
+	yesno("joystick", use_joystick, 1); desc("Use Joystick");
 	key("joystick_no", joystick_no, 0); desc("Joystick Number");
+
+	/*
+	 * Gamepad mapping.
+	 *
+	 * The two platforms need genuinely different defaults, because SDL
+	 * derives joystick button indices differently on each:
+	 *
+	 *  - On a desktop the indices are whatever the device reports. These
+	 *    are a Logitech F310 in DirectInput mode, which SDL enumerates as
+	 *    "Logitech Dual Action" with 4 axes, 12 buttons and 1 hat.
+	 *
+	 *  - On Android SDL translates Android keycodes to the
+	 *    SDL_CONTROLLER_BUTTON_* enum and uses THAT as the raw button
+	 *    index (SDL_sysjoystick.c, keycode_to_SDL()). So the indices are
+	 *    fixed and known ahead of time: A=0, B=1, X=2, Y=3, BACK=4,
+	 *    GUIDE=5, START=6, L3=7, R3=8, L1=9, R1=10, D-pad=11..14.
+	 *
+	 * Both remain overridable per key on the command line, which is how a
+	 * mapping gets corrected on a new device without rebuilding.
+	 */
+	key("js_lr", js_lr, 0); desc("Joystick Left/Right Axis");
+	key("js_ud", js_ud, 1); desc("Joystick Up/Down Axis");
+	key("js_deadzone", js_deadzone, 15); desc("Joystick Deadzone (%)");
+#ifdef __ANDROID__
+	/*
+	 * SDL reports NO hats on Android: Android_AddJoystick() folds any hat
+	 * into D-pad buttons and then sets nhats to 0. So the hat index is
+	 * disabled and the D-pad is read from buttons 11..14 instead.
+	 */
+	key("js_hat", js_hat, -1); desc("Joystick D-Pad (Hat)");
+	key("js_dpad_up", js_dpad_up, 11); desc("D-Pad Up Button");
+	key("js_dpad_down", js_dpad_down, 12); desc("D-Pad Down Button");
+	key("js_dpad_left", js_dpad_left, 13); desc("D-Pad Left Button");
+	key("js_dpad_right", js_dpad_right, 14); desc("D-Pad Right Button");
+	key("js_fire", js_fire, 0); desc("Joystick Fire Button");		// A
+	key("js_fire2", js_fire2, 2); desc("Joystick Fire Button 2");		// X
+	key("js_exit", js_exit, 1); desc("Joystick Back/Cancel Button");	// B
+	key("js_menu", js_menu, 4); desc("Joystick Menu Button");		// Back
+	key("js_pause", js_pause, 6); desc("Joystick Pause Button");		// Start
+#else
+	key("js_hat", js_hat, 0); desc("Joystick D-Pad (Hat)");
+	/* Desktop reports a real hat, so the button path is disabled. */
+	key("js_dpad_up", js_dpad_up, -1); desc("D-Pad Up Button");
+	key("js_dpad_down", js_dpad_down, -1); desc("D-Pad Down Button");
+	key("js_dpad_left", js_dpad_left, -1); desc("D-Pad Left Button");
+	key("js_dpad_right", js_dpad_right, -1); desc("D-Pad Right Button");
+	key("js_fire", js_fire, 0); desc("Joystick Fire Button");		// X
+	key("js_fire2", js_fire2, 1); desc("Joystick Fire Button 2");		// A
+	key("js_exit", js_exit, 2); desc("Joystick Back/Cancel Button");	// B
+	key("js_menu", js_menu, 8); desc("Joystick Menu Button");		// Back
+	key("js_pause", js_pause, 9); desc("Joystick Pause Button");		// Start
+#endif
 	yesno("mouse", use_mouse, 0); desc("Use Mouse");
 	key("mousemode", mousemode, MMD_CROSSHAIR); desc("Mouse Control Mode");
 	yesno("broken_numdia", broken_numdia, 0); desc("Broken NumPad Diagonals");
@@ -81,7 +138,16 @@ void prefs_t::init()
 	key("vol_boost", vol_boost, 0); desc("Volume Boost");
 
 	comment("--- Video settings -------------------------");
+#ifdef __ANDROID__
+	// Fullscreen always on a TV. There is no window manager, nothing
+	// meaningful to choose between, and no pointer to resize anything with.
+	// The playfield keeps XKobo's 4:3 shape and is pillarboxed on a 16:9
+	// panel rather than stretched, so the game is not played at a geometry
+	// it was never balanced for.
+	yesno("fullscreen", fullscreen, 1); desc("Fullscreen Display");
+#else
 	yesno("fullscreen", fullscreen, 0); desc("Fullscreen Display");
+#endif
 	key("videodriver", videodriver, GFX_DRIVER_SDL2D);
 			desc("Display Driver");
 	key("width", width, 640); desc("Horizontal Resolution");

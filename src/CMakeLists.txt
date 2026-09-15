@@ -37,7 +37,7 @@ set(sources
 	graphics/display.cpp
 	graphics/filters.c
 	graphics/gfxengine.cpp
-	graphics/glSDL.c
+	graphics/kobo_sdl12.c
 	graphics/region.c
 	graphics/sofont.cpp
 	graphics/sprite.c
@@ -86,26 +86,19 @@ include_directories(${CMAKE_BINARY_DIR}/include)
 
 set(KOBO_EXE_SUFFIX "")
 
-find_package(SDL REQUIRED)
-include_directories(${SDL_INCLUDE_DIR})
+# SDL 2. IMPORTED_TARGET is what makes this portable: PkgConfig::SDL2 carries
+# absolute library paths, whereas the bare *_LIBRARIES variables give plain
+# names like "SDL2" that the linker only resolves if the library happens to sit
+# in a default search path. That works on Linux and fails on Homebrew with
+# "ld: library 'SDL2' not found", and it would fail again when cross-compiling
+# for Android.
+pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
+pkg_check_modules(SDL2IMAGE REQUIRED IMPORTED_TARGET SDL2_image>=2.0.0)
 
-find_package(SDL_image REQUIRED)
-include_directories(${SDLIMAGE_INCLUDE_DIR})
-
-#pkg_search_module(SDL2 REQUIRED sdl2)
-#include_directories(${SDL2_INCLUDE_DIRS})
-#link_directories(${SDL2_LIBDIR})
-
-#pkg_search_module(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
-#include_directories(${SDL2IMAGE_INCLUDE_DIRS})
-
-#find_package(PNG REQUIRED)
-#include_directories(${PNG_INCLUDE_DIR})
-
-#find_package(AUDIALITY2 REQUIRED)
-#include_directories(${AUDIALITY2_INCLUDE_DIR})
-#pkg_search_module(AUDIALITY2 REQUIRED audiality2)
-#include_directories(${AUDIALITY2_INCLUDE_DIRS})
+# Audiality 2 is deliberately NOT a dependency. Kobo Deluxe carries its own
+# self-contained mixer and synth in src/sound/, sitting on SDL's audio
+# callback, so there is no external audio library to cross-compile for the
+# Android target. (Kobo Redux is the tree that needs A2.)
 
 set(RES_FILES "")
 if(MINGW)
@@ -120,9 +113,22 @@ add_executable(kobodl WIN32 MACOSX_BUNDLE ${sources} ${RES_FILES})
 set_target_properties(kobodl PROPERTIES OUTPUT_NAME
 	"kobodl${KOBO_EXE_SUFFIX}")
 
-target_link_libraries(kobodl ${SDL_LIBRARY} ${SDLIMAGE_LIBRARY} ${KOBO_EXTRA_LIBRARIES})
-#target_link_libraries(kobodl ${SDL2_LIBRARIES} ${SDL2IMAGE_LIBRARIES}
-#	${AUDIALITY2_LIBRARIES} ${KOBO_EXTRA_LIBRARIES})
+target_link_libraries(kobodl
+	PkgConfig::SDL2
+	PkgConfig::SDL2IMAGE
+	${KOBO_EXTRA_LIBRARIES})
+
+# Record where the non-system libraries actually live.
+#
+# SDL2_image is installed outside the default loader paths (it has to be built
+# from source on macOS), and it identifies itself as @rpath/libSDL2_image-...
+# With no RPATH recorded, the executable links but dies at startup with
+# "Library not loaded ... no LC_RPATH's found" -- a failure that does not
+# appear until the moment you try to run the game.
+set_target_properties(kobodl PROPERTIES
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+	BUILD_WITH_INSTALL_RPATH TRUE
+	INSTALL_RPATH "${SDL2IMAGE_LIBRARY_DIRS};${SDL2_LIBRARY_DIRS}")
 
 if(WIN32)
 	target_link_libraries(kobodl winmm dxguid)

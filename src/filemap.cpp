@@ -3,11 +3,14 @@
 	filemap.cpp - Simple Portable File Path Mapper
 ------------------------------------------------------------
  * Copyright (C) David Olofson, 2001, 2003, 2007, 2020
+ * Copyright (C) 2026, monkeywidget (SDL 2 port)
  * This code is released under the terms of the GNU LGPL.
  */
 
 #include "config.h"
 #include "kobolog.h"
+
+#include "SDL.h"
 
 #include "filemap.h"
 
@@ -336,6 +339,41 @@ int filemapper_t::probe(const char *syspath)
 		if(errno == EISDIR)
 			return FM_DIR;
 #endif
+
+#ifdef __ANDROID__
+	/*
+	 * Android: the game's bundled data lives inside the APK, which is not
+	 * part of any filesystem the process can stat() or open(). Every asset
+	 * would therefore fail to resolve here, even though SDL can read it
+	 * perfectly well -- SDL_RWFromFile() falls back to the asset manager,
+	 * but only for a RELATIVE path. So a relative path reaching this point
+	 * is an asset reference, and opening it is the only existence test
+	 * available.
+	 *
+	 * Absolute paths are deliberately left alone: writable data (config,
+	 * profiles, scores) lives under SDL_GetPrefPath(), which is a real
+	 * directory and was already answered by stat() above.
+	 */
+	if(syspath[0] && (syspath[0] != '/'))
+	{
+		SDL_RWops *rw = SDL_RWFromFile(syspath, "rb");
+		if(rw)
+		{
+			SDL_RWclose(rw);
+			return FM_FILE;
+		}
+
+		/*
+		 * Not readable as a file. The asset manager offers no way at
+		 * all to test for a directory, and the only relative paths this
+		 * game asks about are its own data roots ("gfx", "sfx"), which
+		 * the build packages -- so FM_DIR is both the useful answer and
+		 * the only one available.
+		 */
+		return FM_DIR;
+	}
+#endif
+
 	return FM_ERROR;
 }
 
@@ -820,14 +858,76 @@ DIR *filemapper_t::opendir(const char *ref)
 }
 
 
+/*
+ * Create the directory named by a file mapper reference.
+ *
+ * This was a stub that logged "not yet implemented" and returned -1, with the
+ * real call left commented out -- and nothing in the game ever called it. The
+ * consequence was that the user directory (KOBO_USERDIR, ~/.kobodeluxe) was
+ * never created, so on any machine that did not already have one, the first
+ * attempt to save a player profile or a high score failed with
+ *
+ *	 ERROR: Couldn't resolve player profile path 'SCORES>><name>.<uid>'!
+ *	 Failed to save player profile - no file name!
+ *
+ * The reason it presents as a *resolution* failure rather than a write failure
+ * is that test_file_create() probes a candidate with fopen(path, "a"), and
+ * that cannot succeed inside a directory that does not exist.
+ *
+ * Note the reference cannot simply be handed to get(): resolution requires the
+ * target to exist already, which is precisely what is missing here. So the
+ * alias part is resolved on its own -- "HOME>>" does exist -- and the
+ * remainder is appended to it literally.
+ *
+ * Creates one level only; the parent is expected to exist. Returns 0 on
+ * success or if the directory is already there, -1 otherwise.
+ */
 int filemapper_t::mkdir(const char *ref, int perm)
 {
-	log_printf(ELOG, "filemapper_t::mkdir() not yet implemented!\n");
-	return -1;
-#if 0
-	const char *path = get(ref, FM_DIR_CREATE);
-//	::mkdir(path, perm);
-#endif
+	const char *sep = strstr(ref, FM_DEREF_TOKEN);
+	const char *base = NULL;
+	char key[FM_BUFFER_SIZE];
+
+	if(sep)
+	{
+		size_t keylen = sep - ref;
+		if(keylen + sizeof(FM_DEREF_TOKEN) > sizeof(key))
+		{
+			log_printf(ELOG, "filemapper_t::mkdir(): reference"
+					" '%s' too long!\n", ref);
+			return -1;
+		}
+		memcpy(key, ref, keylen);
+		strcpy(key + keylen, FM_DEREF_TOKEN);
+
+		/* Resolve before salloc(), so the buffers cannot alias. */
+		base = get(key, FM_DIR);
+		if(!base)
+		{
+			log_printf(ELOG, "filemapper_t::mkdir(): could not"
+					" resolve the base of '%s'!\n", ref);
+			return -1;
+		}
+	}
+
+	char *path = salloc();
+	if(sep)
+		snprintf(path, FM_BUFFER_SIZE, "%s/%s", base,
+				sep + strlen(FM_DEREF_TOKEN));
+	else
+		snprintf(path, FM_BUFFER_SIZE, "%s", ref);
+
+	if(::mkdir(path, perm) < 0)
+	{
+		if(errno == EEXIST)
+			return 0;
+		log_printf(ELOG, "filemapper_t::mkdir(): could not create"
+				" '%s': %s\n", path, strerror(errno));
+		return -1;
+	}
+
+	log_printf(VLOG, "Created directory '%s'.\n", path);
+	return 0;
 }
 
 
