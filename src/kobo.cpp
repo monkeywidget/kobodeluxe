@@ -1328,6 +1328,26 @@ int KOBO_main::init_js(prefs_t *p)
 		 */
 		SDL_SetHint(SDL_HINT_JOYSTICK_MFI, "0");
 #endif
+#ifdef __IPHONEOS__
+		/*
+		 * Stop SDL from exposing the accelerometer as a fake joystick.
+		 *
+		 * SDL's uikit joystick backend (src/joystick/iphoneos/
+		 * SDL_mfijoystick.m) registers a device named "iOS Accelerometer"
+		 * alongside any real MFi/Bluetooth controller, by default (SDL_HINT_
+		 * ACCELEROMETER_AS_JOYSTICK defaults true). It has 0 buttons and
+		 * SDL correctly refuses to treat it as a game controller -- but it
+		 * still competes for joystick index 0 with a real pad, and nothing
+		 * guarantees which one SDL enumerates first. When the accelerometer
+		 * wins, joystick_no's default of 0 opens it instead of the real
+		 * controller, which then sits unopened and produces no input at
+		 * all: confirmed with a real "Wireless Controller" MFi pad attached,
+		 * where SDL_NumJoysticks() reported 2 and index 0 was "iOS
+		 * Accelerometer". Disabling this removes the fake entry outright,
+		 * so the real controller is reliably index 0.
+		 */
+		SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
+#endif
 		/*
 		 * SDL_INIT_GAMECONTROLLER, which implies SDL_INIT_JOYSTICK.
 		 *
@@ -2236,8 +2256,32 @@ void kobo_gfxengine_t::frame()
 				break;
 			}
 			k = gamecontrol.map(ev.key.keysym.sym);
-			gamecontrol.press(k);
-			gsm.press(k, kobo12_KeysymChar(&ev.key.keysym));
+#ifdef __IPHONEOS__
+			/*
+			 * Some Bluetooth pads that iOS reports as a
+			 * SDL_GameController (a "Wireless Controller") ALSO
+			 * pair as an emulated keyboard, sending Up/Down/Left/
+			 * Right/Return/Escape HID key reports for the very
+			 * same button presses the GameController path already
+			 * delivers as SDL_CONTROLLERBUTTONDOWN -- confirmed by
+			 * logging both side by side: pressing the "A" button
+			 * produced both "Return" (-> BTN_SELECT) and the
+			 * controller's "a" (-> BTN_FIRE) at once, firing two
+			 * unrelated actions from one press. SDL2 gives no way
+			 * to tell this synthetic keyboard apart from a real
+			 * one (no per-device key events on iOS), so once a
+			 * real game controller is open, stop feeding its
+			 * fallout into the game-action layer. This is the
+			 * required input on iPad anyway (no touch controls);
+			 * a real external keyboard isn't a supported way to
+			 * play here, so there is nothing legitimate to lose.
+			 */
+			if(!km.gamepad)
+#endif
+			{
+				gamecontrol.press(k);
+				gsm.press(k, kobo12_KeysymChar(&ev.key.keysym));
+			}
 			break;
 		  case SDL_KEYUP:
 			if((ev.key.keysym.sym == SDLK_ESCAPE) && km.escape_hammering())
@@ -2336,11 +2380,11 @@ void kobo_gfxengine_t::frame()
 					gsm.release(act);
 				}
 			}
-			log_printf(DLOG, "Controller \"%s\" %s\n",
+			log_printf(DLOG, "Controller \"%s\" %s (-> %d)\n",
 					SDL_GameControllerGetStringForButton(
 					(SDL_GameControllerButton)
 					ev.cbutton.button),
-					down ? "down" : "up");
+					down ? "down" : "up", act);
 			break;
 		  }
 

@@ -1,0 +1,744 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 110;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1033E7C0588F4D538699E02C /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4302F056C737474099DFA66F /* SDL2_image.framework */; };
+		5560A63B536C4B85A8BD172B /* SDL2_image.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6B95739A718E4A89B4DED26E /* SDL2_image.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6C8E646919264C2EB35EF8E6 /* SDL2_image.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6B95739A718E4A89B4DED26E /* SDL2_image.xcframework */; };
+		E14D459018F24064A7E89500 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E3E843CC4B3472C8A1CD428 /* SDL2.framework */; };
+		E7FA0A1D9C4841319E5A4F82 /* SDL2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3E3E843CC4B3472C8A1CD428 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		EDCDEB331408439097B4BE46 /* SDL2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE31C55F4704951A4302B34 /* SDL2.xcframework */; };
+		EFC870B73883477593DDB013 /* SDL2_image.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4302F056C737474099DFA66F /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FC41874C3ECA4768A7D84535 /* SDL2.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE31C55F4704951A4302B34 /* SDL2.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B3F210ED8462443FA895DEEE /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = Frameworks;
+			files = (
+				FC41874C3ECA4768A7D84535 /* SDL2.xcframework in Embed Frameworks */,
+				5560A63B536C4B85A8BD172B /* SDL2_image.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+		};
+		C8CD3976B13E4FEF9AA90291 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = Frameworks;
+			files = (
+				E7FA0A1D9C4841319E5A4F82 /* SDL2.framework in Embed Frameworks */,
+				EFC870B73883477593DDB013 /* SDL2_image.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2AE31C55F4704951A4302B34 /* SDL2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SDL2.xcframework; path = ../Frameworks/ios/SDL2.xcframework; sourceTree = "<group>"; };
+		3E3E843CC4B3472C8A1CD428 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../Frameworks/macos/SDL2.framework; sourceTree = "<group>"; };
+		4302F056C737474099DFA66F /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../Frameworks/macos/SDL2_image.framework; sourceTree = "<group>"; };
+		6B95739A718E4A89B4DED26E /* SDL2_image.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SDL2_image.xcframework; path = ../Frameworks/ios/SDL2_image.xcframework; sourceTree = "<group>"; };
+		F7C0966A307DE53F000E1AF4 /* KoboDeluxe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoboDeluxe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F7C09680307DE53F000E1AF4 /* KoboDeluxe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoboDeluxe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F7C09695307DE53F000E1AF4 /* KoboDeluxe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoboDeluxe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F7C096AB307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Renderer.m,
+				Shaders.metal,
+			);
+			target = F7C09669307DE53F000E1AF4 /* KoboDeluxe iOS */;
+		};
+		F7C096AF307DE53F000E1AF4 /* Exceptions for "KoboDeluxe iOS" folder in "KoboDeluxe iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F7C09669307DE53F000E1AF4 /* KoboDeluxe iOS */;
+		};
+		F7C096B0307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe tvOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Renderer.m,
+				Shaders.metal,
+			);
+			target = F7C0967F307DE53F000E1AF4 /* KoboDeluxe tvOS */;
+		};
+		F7C096B4307DE53F000E1AF4 /* Exceptions for "KoboDeluxe tvOS" folder in "KoboDeluxe tvOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F7C0967F307DE53F000E1AF4 /* KoboDeluxe tvOS */;
+		};
+		F7C096B5307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Renderer.m,
+				Shaders.metal,
+			);
+			target = F7C09694307DE53F000E1AF4 /* KoboDeluxe macOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F7C09660307DE53E000E1AF4 /* KoboDeluxe Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F7C096AB307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe iOS" target */,
+				F7C096B0307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe tvOS" target */,
+				F7C096B5307DE53F000E1AF4 /* Exceptions for "KoboDeluxe Shared" folder in "KoboDeluxe macOS" target */,
+			);
+			path = "KoboDeluxe Shared";
+			sourceTree = "<group>";
+		};
+		F7C0966C307DE53F000E1AF4 /* KoboDeluxe iOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F7C096AF307DE53F000E1AF4 /* Exceptions for "KoboDeluxe iOS" folder in "KoboDeluxe iOS" target */,
+			);
+			path = "KoboDeluxe iOS";
+			sourceTree = "<group>";
+		};
+		F7C09681307DE53F000E1AF4 /* KoboDeluxe tvOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F7C096B4307DE53F000E1AF4 /* Exceptions for "KoboDeluxe tvOS" folder in "KoboDeluxe tvOS" target */,
+			);
+			path = "KoboDeluxe tvOS";
+			sourceTree = "<group>";
+		};
+		F7C09696307DE53F000E1AF4 /* KoboDeluxe macOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "KoboDeluxe macOS";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F7C09667307DE53F000E1AF4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				EDCDEB331408439097B4BE46 /* SDL2.xcframework in Frameworks */,
+				6C8E646919264C2EB35EF8E6 /* SDL2_image.xcframework in Frameworks */,
+			);
+		};
+		F7C0967D307DE53F000E1AF4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F7C09692307DE53F000E1AF4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				E14D459018F24064A7E89500 /* SDL2.framework in Frameworks */,
+				1033E7C0588F4D538699E02C /* SDL2_image.framework in Frameworks */,
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2610F588155841CB89FC590F /* SDL (KoboDeluxe iOS) */ = {
+			isa = PBXGroup;
+			children = (
+				2AE31C55F4704951A4302B34 /* SDL2.xcframework */,
+				6B95739A718E4A89B4DED26E /* SDL2_image.xcframework */,
+			);
+			name = "SDL (KoboDeluxe iOS)";
+			sourceTree = "<group>";
+		};
+		A797B7294B404D02A223EB2C /* SDL (KoboDeluxe macOS) */ = {
+			isa = PBXGroup;
+			children = (
+				3E3E843CC4B3472C8A1CD428 /* SDL2.framework */,
+				4302F056C737474099DFA66F /* SDL2_image.framework */,
+			);
+			name = "SDL (KoboDeluxe macOS)";
+			sourceTree = "<group>";
+		};
+		F7C0965B307DE53E000E1AF4 = {
+			isa = PBXGroup;
+			children = (
+				F7C09660307DE53E000E1AF4 /* KoboDeluxe Shared */,
+				F7C0966C307DE53F000E1AF4 /* KoboDeluxe iOS */,
+				F7C09681307DE53F000E1AF4 /* KoboDeluxe tvOS */,
+				F7C09696307DE53F000E1AF4 /* KoboDeluxe macOS */,
+				F7C0966B307DE53F000E1AF4 /* Products */,
+				2610F588155841CB89FC590F /* SDL (KoboDeluxe iOS) */,
+				A797B7294B404D02A223EB2C /* SDL (KoboDeluxe macOS) */,
+			);
+			sourceTree = "<group>";
+		};
+		F7C0966B307DE53F000E1AF4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F7C0966A307DE53F000E1AF4 /* KoboDeluxe.app */,
+				F7C09680307DE53F000E1AF4 /* KoboDeluxe.app */,
+				F7C09695307DE53F000E1AF4 /* KoboDeluxe.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F7C09669307DE53F000E1AF4 /* KoboDeluxe iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F7C096AC307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe iOS" */;
+			buildPhases = (
+				F7C09666307DE53F000E1AF4 /* Sources */,
+				F7C09667307DE53F000E1AF4 /* Frameworks */,
+				F7C09668307DE53F000E1AF4 /* Resources */,
+				B3F210ED8462443FA895DEEE /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				F7C0966C307DE53F000E1AF4 /* KoboDeluxe iOS */,
+			);
+			name = "KoboDeluxe iOS";
+			productName = "KoboDeluxe iOS";
+			productReference = F7C0966A307DE53F000E1AF4 /* KoboDeluxe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F7C0967F307DE53F000E1AF4 /* KoboDeluxe tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F7C096B1307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe tvOS" */;
+			buildPhases = (
+				F7C0967C307DE53F000E1AF4 /* Sources */,
+				F7C0967D307DE53F000E1AF4 /* Frameworks */,
+				F7C0967E307DE53F000E1AF4 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				F7C09681307DE53F000E1AF4 /* KoboDeluxe tvOS */,
+			);
+			name = "KoboDeluxe tvOS";
+			productName = "KoboDeluxe tvOS";
+			productReference = F7C09680307DE53F000E1AF4 /* KoboDeluxe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F7C09694307DE53F000E1AF4 /* KoboDeluxe macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F7C096B6307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe macOS" */;
+			buildPhases = (
+				F7C09691307DE53F000E1AF4 /* Sources */,
+				F7C09692307DE53F000E1AF4 /* Frameworks */,
+				F7C09693307DE53F000E1AF4 /* Resources */,
+				C8CD3976B13E4FEF9AA90291 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				F7C09696307DE53F000E1AF4 /* KoboDeluxe macOS */,
+			);
+			name = "KoboDeluxe macOS";
+			productName = "KoboDeluxe macOS";
+			productReference = F7C09695307DE53F000E1AF4 /* KoboDeluxe.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F7C0965C307DE53E000E1AF4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					F7C09669307DE53F000E1AF4 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F7C0967F307DE53F000E1AF4 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F7C09694307DE53F000E1AF4 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = F7C0965F307DE53E000E1AF4 /* Build configuration list for PBXProject "KoboDeluxe" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F7C0965B307DE53E000E1AF4;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F7C0966B307DE53F000E1AF4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F7C09669307DE53F000E1AF4 /* KoboDeluxe iOS */,
+				F7C0967F307DE53F000E1AF4 /* KoboDeluxe tvOS */,
+				F7C09694307DE53F000E1AF4 /* KoboDeluxe macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F7C09668307DE53F000E1AF4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		F7C0967E307DE53F000E1AF4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		F7C09693307DE53F000E1AF4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F7C09666307DE53F000E1AF4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F7C0967C307DE53F000E1AF4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F7C09691307DE53F000E1AF4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F7C096AD307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe iOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../Frameworks/ios",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				"HEADER_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/ios/SDL2.xcframework/ios-arm64/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/ios/SDL2_image.xcframework/ios-arm64/SDL2_image.framework/Headers",
+				);
+				"HEADER_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/ios/SDL2.xcframework/ios-arm64_x86_64-simulator/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/ios/SDL2_image.xcframework/ios-arm64-simulator/SDL2_image.framework/Headers",
+				);
+				INFOPLIST_FILE = "KoboDeluxe iOS/Info.plist";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.6.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		F7C096AE307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe iOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../Frameworks/ios",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				"HEADER_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/ios/SDL2.xcframework/ios-arm64/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/ios/SDL2_image.xcframework/ios-arm64/SDL2_image.framework/Headers",
+				);
+				"HEADER_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/ios/SDL2.xcframework/ios-arm64_x86_64-simulator/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/ios/SDL2_image.xcframework/ios-arm64-simulator/SDL2_image.framework/Headers",
+				);
+				INFOPLIST_FILE = "KoboDeluxe iOS/Info.plist";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.6.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F7C096B2307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe tvOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "KoboDeluxe tvOS/Info.plist";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		F7C096B3307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe tvOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "KoboDeluxe tvOS/Info.plist";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 27.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F7C096B7307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe macOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../Frameworks/macos",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/macos/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/macos/SDL2_image.framework/Headers",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		F7C096B8307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe macOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../Frameworks/macos",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/..",
+					"$(SRCROOT)/../../src",
+					"$(SRCROOT)/../../src/graphics",
+					"$(SRCROOT)/../../src/eel",
+					"$(SRCROOT)/../../src/sound",
+					"$(SRCROOT)/../../data/sfx",
+					"$(SRCROOT)/../Frameworks/macos/SDL2.framework/Headers",
+					"$(SRCROOT)/../Frameworks/macos/SDL2_image.framework/Headers",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.monkeywidget.KoboDeluxe;
+				PRODUCT_NAME = KoboDeluxe;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		F7C096B9307DE53F000E1AF4 /* Debug configuration for PBXProject "KoboDeluxe" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+			};
+			name = Debug;
+		};
+		F7C096BA307DE53F000E1AF4 /* Release configuration for PBXProject "KoboDeluxe" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F7C0965F307DE53E000E1AF4 /* Build configuration list for PBXProject "KoboDeluxe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7C096B9307DE53F000E1AF4 /* Debug configuration for PBXProject "KoboDeluxe" */,
+				F7C096BA307DE53F000E1AF4 /* Release configuration for PBXProject "KoboDeluxe" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F7C096AC307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7C096AD307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe iOS" */,
+				F7C096AE307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe iOS" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F7C096B1307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7C096B2307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe tvOS" */,
+				F7C096B3307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe tvOS" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F7C096B6307DE53F000E1AF4 /* Build configuration list for PBXNativeTarget "KoboDeluxe macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7C096B7307DE53F000E1AF4 /* Debug configuration for PBXNativeTarget "KoboDeluxe macOS" */,
+				F7C096B8307DE53F000E1AF4 /* Release configuration for PBXNativeTarget "KoboDeluxe macOS" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F7C0965C307DE53E000E1AF4 /* Project object */;
+	validationLevel = 1;
+}

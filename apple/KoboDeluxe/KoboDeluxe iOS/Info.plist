@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Reinstated 2026-10-13: omitting this entirely crashes on launch on
+	     this iOS version -- SIGTRAP in
+	     UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption (SDL2's
+	     own UIKit backend predates this enforcement and has zero
+	     Scene-lifecycle code of its own). A bare manifest with no
+	     UISceneConfigurations is NOT enough either -- confirmed by testing
+	     (app launches but the window, created the legacy way by SDL, is
+	     never attached to any scene, so nothing draws) and independently by
+	     other projects hitting this same iOS version (see SceneDelegate.m).
+	     SceneDelegate here is a small bridge class, not a real app scene
+	     controller -- it just captures the UIWindowScene and a swizzle in
+	     SceneDelegate.m attaches it to whatever window SDL creates. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>Black</string>
+	</dict>
+	<!-- Needed for Bluetooth mouse/trackpad input on iPad, per SDL2's own
+	     README-ios. -->
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

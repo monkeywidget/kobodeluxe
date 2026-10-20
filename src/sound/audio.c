@@ -297,7 +297,14 @@ static void _grab(Sint16 *buf, unsigned frames)
  * Unit is not important as calculations are relative.
  */
 # if defined(__GNUC__) && defined(i386)
-inline int timestamp(void)
+/* static: a plain (non-static) "inline" only has a defined external symbol
+   under GNU89 inline semantics. Clang/C99+ inline rules mean a call the
+   compiler doesn't choose to inline (routine at -O0/Debug; every other
+   port's actual tested build happens to run at Release/-O2+, which always
+   inlines this trivial wrapper and silently masks the gap) is left as an
+   undefined reference to "timestamp" at link time. static fixes this
+   unconditionally, at any optimization level. */
+static inline int timestamp(void)
 {
 	unsigned long long int x;
 	__asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
@@ -315,14 +322,14 @@ inline int timestamp(void)
 #	  include <time.h>
 #	 endif
 #	endif
-inline int timestamp(void)
+static inline int timestamp(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 #  else
-inline int timestamp(void)
+static inline int timestamp(void)
 {
 	return SDL_GetTicks();
 }

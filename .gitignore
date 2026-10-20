@@ -60,6 +60,13 @@ android/local.properties
 *.keystore
 *.jks
 
+# ---- Apple local configuration ----------------------------------------------
+# ipados.env carries this machine's Apple Developer Team ID (DEVELOPMENT_TEAM
+# is deliberately left blank in project.pbxproj) -- account-specific, like
+# android/local.properties above. tools/port/ipados.env.example is the
+# checked-in template.
+tools/port/ipados.env
+
 # ---- Machine-specific build scaffolding ------------------------------------
 # These are symlinks to SDL sources outside the repository, and a copy of
 # data/ staged for packaging into the APK. All three are recreated by
@@ -77,6 +84,16 @@ android/app/src/main/assets/
 # evidence checked in under docs/evidence/ is kept deliberately.
 *.log
 tools/port/out/
+
+# ---- Apple (iPadOS + native-Xcode macOS) build output -----------------------
+# Frameworks/ holds SDL2.xcframework and SDL2_image.{framework,xcframework},
+# built from .src/SDL2-*/.src/SDL2_image-*/ -- see
+# xkobo-port-notes/docs/spec/ipados-port.md §3. Reproducible, and large
+# (~13M) binary content with no reason to live in history.
+apple/Frameworks/
+# Per-user Xcode state (window layout, breakpoints, scheme selection),
+# machine-specific like every other port's local.properties/local.xcconfig.
+xcuserdata/
 
 # ---- macOS -----------------------------------------------------------------
 .DS_Store
