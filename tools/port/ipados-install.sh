@@ -7,7 +7,13 @@
 # expires: it rebuilds, re-signs via -allowProvisioningUpdates (which renews
 # the provisioning profile automatically), reinstalls, and relaunches.
 #
-# The iPad must be unlocked for devicectl to install/launch on it.
+# The iPad must be unlocked for devicectl to install/launch on it. If the
+# provisioning profile was just renewed (e.g. the 7-day expiry above, or
+# any time this is the first install of a fresh profile), the launch will
+# fail with "has an invalid code signature ... has not been explicitly
+# trusted by the user" until the device trusts the new profile by hand:
+# Settings > General > VPN & Device Management > under "Developer App",
+# tap the Apple ID/certificate > Trust. Re-run this script afterward.
 #
 # Usage: tools/port/ipados-install.sh
 set -eu
@@ -37,8 +43,12 @@ devices = json.load(sys.stdin)["result"]["devices"]
 for d in devices:
 	hw = d.get("hardwareProperties", {})
 	conn = d.get("connectionProperties", {})
+	# Simulators always report reality=="simulated"; a real device in some
+	# connection states (e.g. tunnel disconnected) omits the field entirely
+	# rather than reporting "physical" -- so check what it is not, not what
+	# it is, or a perfectly good physical device can be missed.
 	if (hw.get("platform") == "'"$DEVICE_PLATFORM"'"
-			and hw.get("reality") == "physical"
+			and hw.get("reality") != "simulated"
 			and conn.get("pairingState") == "paired"):
 		print(hw["udid"])
 		break
